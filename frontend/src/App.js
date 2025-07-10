@@ -7,8 +7,15 @@ const App = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [sortBy, setSortBy] = useState('name');
   const [cart, setCart] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
   const [showCart, setShowCart] = useState(false);
+  const [showWishlist, setShowWishlist] = useState(false);
+  const [showOrders, setShowOrders] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState('login');
@@ -18,6 +25,10 @@ const App = () => {
   const [orderTotal, setOrderTotal] = useState(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [orderDetails, setOrderDetails] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [showReviews, setShowReviews] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
   const [shippingInfo, setShippingInfo] = useState({
     address: '',
     city: '',
@@ -37,12 +48,20 @@ const App = () => {
     const storedToken = localStorage.getItem('token');
     if (storedUser && storedToken) {
       setCurrentUser(JSON.parse(storedUser));
+      fetchWishlist();
     }
   }, []);
 
   const fetchPlants = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/plants`);
+      const params = new URLSearchParams();
+      if (selectedCategory) params.append('category', selectedCategory);
+      if (searchTerm) params.append('search', searchTerm);
+      if (minPrice) params.append('min_price', minPrice);
+      if (maxPrice) params.append('max_price', maxPrice);
+      if (sortBy) params.append('sort_by', sortBy);
+      
+      const response = await fetch(`${BACKEND_URL}/api/plants?${params}`);
       const data = await response.json();
       setPlants(data);
     } catch (error) {
@@ -60,14 +79,61 @@ const App = () => {
     }
   };
 
+  const fetchWishlist = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${BACKEND_URL}/api/wishlist`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setWishlist(data);
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist:', error);
+    }
+  };
+
+  const fetchOrders = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${BACKEND_URL}/api/orders`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  };
+
+  const fetchReviews = async (plantId) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/plants/${plantId}/reviews`);
+      const data = await response.json();
+      setReviews(data);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    }
+  };
+
+  // Update fetchPlants when filters change
+  useEffect(() => {
+    fetchPlants();
+  }, [selectedCategory, searchTerm, minPrice, maxPrice, sortBy]);
+
   const filterPlants = () => {
-    return plants.filter(plant => {
-      const matchesCategory = !selectedCategory || plant.category === selectedCategory;
-      const matchesSearch = !searchTerm || 
-        plant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        plant.description.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesCategory && matchesSearch;
-    });
+    return plants; // Already filtered by API
   };
 
   const addToCart = (plant) => {
@@ -99,6 +165,53 @@ const App = () => {
     ));
   };
 
+  const addToWishlist = async (plant) => {
+    if (!currentUser) {
+      alert('Please login to add items to wishlist');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${BACKEND_URL}/api/wishlist/${plant.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        fetchWishlist();
+        alert('Added to wishlist!');
+      } else {
+        const error = await response.json();
+        alert(error.detail || 'Error adding to wishlist');
+      }
+    } catch (error) {
+      console.error('Error adding to wishlist:', error);
+      alert('Error adding to wishlist');
+    }
+  };
+
+  const removeFromWishlist = async (plantId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${BACKEND_URL}/api/wishlist/${plantId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        fetchWishlist();
+        alert('Removed from wishlist!');
+      }
+    } catch (error) {
+      console.error('Error removing from wishlist:', error);
+    }
+  };
+
   const getTotalItems = () => {
     return cart.reduce((total, item) => total + item.quantity, 0);
   };
@@ -124,8 +237,10 @@ const App = () => {
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('token', data.access_token);
         setShowAuth(false);
+        fetchWishlist();
       } else {
-        alert('Authentication failed');
+        const error = await response.json();
+        alert(error.detail || 'Authentication failed');
       }
     } catch (error) {
       console.error('Auth error:', error);
@@ -137,6 +252,11 @@ const App = () => {
     setCurrentUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    setWishlist([]);
+    setOrders([]);
+    setShowOrders(false);
+    setShowProfile(false);
+    setShowWishlist(false);
   };
 
   const calculateOrderTotal = async () => {
@@ -187,6 +307,42 @@ const App = () => {
     }
   };
 
+  const submitReview = async (plantId) => {
+    if (!currentUser) {
+      alert('Please login to submit a review');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${BACKEND_URL}/api/plants/${plantId}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          plant_id: plantId,
+          rating: reviewForm.rating,
+          comment: reviewForm.comment
+        })
+      });
+
+      if (response.ok) {
+        alert('Review submitted successfully!');
+        setReviewForm({ rating: 5, comment: '' });
+        fetchReviews(plantId);
+        fetchPlants(); // Refresh to update ratings
+      } else {
+        const error = await response.json();
+        alert(error.detail || 'Error submitting review');
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      alert('Error submitting review');
+    }
+  };
+
   useEffect(() => {
     if (showCheckout) {
       calculateOrderTotal();
@@ -212,6 +368,40 @@ const App = () => {
     setOrderDetails(null);
     setShowCart(false);
     setShowCheckout(false);
+    setShowOrders(false);
+    setShowProfile(false);
+    setShowWishlist(false);
+  };
+
+  const showPlantDetails = (plant) => {
+    setSelectedPlant(plant);
+    fetchReviews(plant.id);
+    setShowReviews(true);
+  };
+
+  const isInWishlist = (plantId) => {
+    return wishlist.some(item => item.id === plantId);
+  };
+
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<span key={i} className="star filled">★</span>);
+    }
+    
+    if (hasHalfStar) {
+      stars.push(<span key="half" className="star half">★</span>);
+    }
+    
+    const emptyStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(<span key={`empty-${i}`} className="star empty">☆</span>);
+    }
+    
+    return stars;
   };
 
   const filteredPlants = filterPlants();
@@ -225,17 +415,39 @@ const App = () => {
             <h1 className="logo">🌿 Green Haven Nursery</h1>
             <nav className="nav">
               <button 
-                className={`nav-btn ${!showCart && !showCheckout ? 'active' : ''}`}
-                onClick={() => { setShowCart(false); setShowCheckout(false); }}
+                className={`nav-btn ${!showCart && !showCheckout && !showOrders && !showProfile && !showWishlist ? 'active' : ''}`}
+                onClick={resetToShopping}
               >
                 Plants
               </button>
               <button 
                 className={`nav-btn cart-btn ${showCart ? 'active' : ''}`}
-                onClick={() => { setShowCart(true); setShowCheckout(false); }}
+                onClick={() => { setShowCart(true); setShowCheckout(false); setShowOrders(false); setShowProfile(false); setShowWishlist(false); }}
               >
                 Cart ({getTotalItems()})
               </button>
+              {currentUser && (
+                <>
+                  <button 
+                    className={`nav-btn ${showWishlist ? 'active' : ''}`}
+                    onClick={() => { setShowWishlist(true); setShowCart(false); setShowCheckout(false); setShowOrders(false); setShowProfile(false); fetchWishlist(); }}
+                  >
+                    Wishlist ({wishlist.length})
+                  </button>
+                  <button 
+                    className={`nav-btn ${showOrders ? 'active' : ''}`}
+                    onClick={() => { setShowOrders(true); setShowCart(false); setShowCheckout(false); setShowProfile(false); setShowWishlist(false); fetchOrders(); }}
+                  >
+                    Orders
+                  </button>
+                  <button 
+                    className={`nav-btn ${showProfile ? 'active' : ''}`}
+                    onClick={() => { setShowProfile(true); setShowCart(false); setShowCheckout(false); setShowOrders(false); setShowWishlist(false); }}
+                  >
+                    Profile
+                  </button>
+                </>
+              )}
               {currentUser ? (
                 <div className="user-menu">
                   <span>Hi, {currentUser.first_name}!</span>
@@ -255,7 +467,7 @@ const App = () => {
       </header>
 
       {/* Hero Section */}
-      {!showCart && !showCheckout && (
+      {!showCart && !showCheckout && !showOrders && !showProfile && !showWishlist && (
         <section className="hero">
           <div className="container">
             <div className="hero-content">
@@ -281,6 +493,32 @@ const App = () => {
                     </option>
                   ))}
                 </select>
+                <div className="price-filter">
+                  <input
+                    type="number"
+                    placeholder="Min price"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    className="price-input"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max price"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    className="price-input"
+                  />
+                </div>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="sort-select"
+                >
+                  <option value="name">Sort by Name</option>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                  <option value="rating">Top Rated</option>
+                </select>
               </div>
             </div>
           </div>
@@ -288,7 +526,7 @@ const App = () => {
       )}
 
       {/* Plant Grid */}
-      {!showCart && !showCheckout && (
+      {!showCart && !showCheckout && !showOrders && !showProfile && !showWishlist && (
         <section className="plants-section">
           <div className="container">
             <div className="plants-grid">
@@ -298,25 +536,34 @@ const App = () => {
                     <img src={plant.image_url} alt={plant.name} />
                     <div className="plant-overlay">
                       <button 
-                        className="view-btn"
-                        onClick={() => setSelectedPlant(plant)}
+                        className="overlay-btn view-btn"
+                        onClick={() => showPlantDetails(plant)}
                       >
                         View Details
+                      </button>
+                      <button 
+                        className="overlay-btn add-btn"
+                        onClick={() => addToCart(plant)}
+                      >
+                        Add to Cart
+                      </button>
+                      <button 
+                        className={`overlay-btn wishlist-btn ${isInWishlist(plant.id) ? 'in-wishlist' : ''}`}
+                        onClick={() => isInWishlist(plant.id) ? removeFromWishlist(plant.id) : addToWishlist(plant)}
+                      >
+                        {isInWishlist(plant.id) ? '💖' : '🤍'}
                       </button>
                     </div>
                   </div>
                   <div className="plant-info">
                     <h3>{plant.name}</h3>
-                    <p className="price">${plant.price}</p>
-                    <p className="category">{plant.category}</p>
-                    <p className="stock">Stock: {plant.stock_quantity}</p>
-                    <button 
-                      className="add-to-cart-btn"
-                      onClick={() => addToCart(plant)}
-                      disabled={plant.stock_quantity === 0}
-                    >
-                      {plant.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
-                    </button>
+                    <div className="plant-rating">
+                      {renderStars(plant.average_rating)}
+                      <span className="rating-count">({plant.total_reviews})</span>
+                    </div>
+                    <p className="plant-price">${plant.price}</p>
+                    <p className="plant-category">{plant.category}</p>
+                    <p className="plant-description">{plant.description.substring(0, 100)}...</p>
                   </div>
                 </div>
               ))}
@@ -325,57 +572,137 @@ const App = () => {
         </section>
       )}
 
-      {/* Cart View */}
-      {showCart && !showCheckout && (
-        <section className="cart-section">
-          <div className="container">
+      {/* Plant Details Modal */}
+      {showReviews && selectedPlant && (
+        <div className="modal-overlay" onClick={() => setShowReviews(false)}>
+          <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setShowReviews(false)}>×</button>
+            <div className="plant-details">
+              <div className="plant-details-left">
+                <img src={selectedPlant.image_url} alt={selectedPlant.name} className="plant-detail-image" />
+              </div>
+              <div className="plant-details-right">
+                <h2>{selectedPlant.name}</h2>
+                <div className="plant-rating">
+                  {renderStars(selectedPlant.average_rating)}
+                  <span className="rating-count">({selectedPlant.total_reviews} reviews)</span>
+                </div>
+                <p className="plant-price">${selectedPlant.price}</p>
+                <p className="plant-description">{selectedPlant.description}</p>
+                <div className="plant-care">
+                  <h4>Care Instructions:</h4>
+                  <p>{selectedPlant.care_instructions}</p>
+                  <h4>Sunlight Requirements:</h4>
+                  <p>{selectedPlant.sunlight_requirements}</p>
+                </div>
+                <div className="plant-actions">
+                  <button className="btn btn-primary" onClick={() => addToCart(selectedPlant)}>
+                    Add to Cart
+                  </button>
+                  <button 
+                    className={`btn btn-secondary ${isInWishlist(selectedPlant.id) ? 'in-wishlist' : ''}`}
+                    onClick={() => isInWishlist(selectedPlant.id) ? removeFromWishlist(selectedPlant.id) : addToWishlist(selectedPlant)}
+                  >
+                    {isInWishlist(selectedPlant.id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Reviews Section */}
+            <div className="reviews-section">
+              <h3>Customer Reviews</h3>
+              
+              {/* Add Review Form */}
+              {currentUser && (
+                <div className="review-form">
+                  <h4>Write a Review</h4>
+                  <div className="rating-input">
+                    <label>Rating:</label>
+                    <select 
+                      value={reviewForm.rating} 
+                      onChange={(e) => setReviewForm({...reviewForm, rating: parseInt(e.target.value)})}
+                    >
+                      {[5,4,3,2,1].map(num => (
+                        <option key={num} value={num}>{num} Star{num > 1 ? 's' : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <textarea
+                    value={reviewForm.comment}
+                    onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})}
+                    placeholder="Share your experience with this plant..."
+                    className="review-textarea"
+                  />
+                  <button 
+                    className="btn btn-primary"
+                    onClick={() => submitReview(selectedPlant.id)}
+                  >
+                    Submit Review
+                  </button>
+                </div>
+              )}
+              
+              {/* Reviews List */}
+              <div className="reviews-list">
+                {reviews.map(review => (
+                  <div key={review.id} className="review-item">
+                    <div className="review-header">
+                      <strong>{review.user_name}</strong>
+                      <div className="review-rating">
+                        {renderStars(review.rating)}
+                      </div>
+                      <span className="review-date">
+                        {new Date(review.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="review-comment">{review.comment}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cart Modal */}
+      {showCart && (
+        <div className="modal-overlay" onClick={() => setShowCart(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setShowCart(false)}>×</button>
             <h2>Shopping Cart</h2>
             {cart.length === 0 ? (
-              <div className="empty-cart">
-                <p>Your cart is empty</p>
-                <button 
-                  className="continue-shopping-btn"
-                  onClick={() => setShowCart(false)}
-                >
-                  Continue Shopping
-                </button>
-              </div>
+              <p>Your cart is empty</p>
             ) : (
-              <div className="cart-content">
-                <div className="cart-items">
-                  {cart.map(item => (
-                    <div key={item.id} className="cart-item">
-                      <img src={item.image_url} alt={item.name} />
-                      <div className="item-details">
-                        <h3>{item.name}</h3>
-                        <p className="price">${item.price}</p>
-                        <div className="quantity-controls">
-                          <button onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</button>
-                          <span>{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
-                        </div>
-                      </div>
-                      <div className="item-total">
-                        <p>${(item.price * item.quantity).toFixed(2)}</p>
-                        <button 
-                          className="remove-btn"
-                          onClick={() => removeFromCart(item.id)}
-                        >
-                          Remove
-                        </button>
+              <div className="cart-items">
+                {cart.map(item => (
+                  <div key={item.id} className="cart-item">
+                    <img src={item.image_url} alt={item.name} className="cart-item-image" />
+                    <div className="cart-item-info">
+                      <h4>{item.name}</h4>
+                      <p>${item.price}</p>
+                      <div className="quantity-controls">
+                        <button onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</button>
+                        <span>{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
                       </div>
                     </div>
-                  ))}
-                </div>
-                <div className="cart-summary">
-                  <h3>Order Summary</h3>
-                  <p>Subtotal: ${getSubtotal().toFixed(2)}</p>
-                  <p>Shipping: {getSubtotal() > 50 ? 'FREE' : '$8.99'}</p>
-                  <hr />
-                  <p className="total">Total: ${(getSubtotal() + (getSubtotal() > 50 ? 0 : 8.99)).toFixed(2)}</p>
+                    <button 
+                      className="remove-btn"
+                      onClick={() => removeFromCart(item.id)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <div className="cart-total">
+                  <h3>Subtotal: ${getSubtotal().toFixed(2)}</h3>
                   <button 
                     className="checkout-btn"
-                    onClick={() => setShowCheckout(true)}
+                    onClick={() => {
+                      setShowCart(false);
+                      setShowCheckout(true);
+                    }}
                   >
                     Proceed to Checkout
                   </button>
@@ -383,16 +710,131 @@ const App = () => {
               </div>
             )}
           </div>
-        </section>
+        </div>
       )}
 
-      {/* Checkout View */}
+      {/* Wishlist Modal */}
+      {showWishlist && (
+        <div className="modal-overlay" onClick={() => setShowWishlist(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setShowWishlist(false)}>×</button>
+            <h2>My Wishlist</h2>
+            {wishlist.length === 0 ? (
+              <p>Your wishlist is empty</p>
+            ) : (
+              <div className="wishlist-items">
+                {wishlist.map(item => (
+                  <div key={item.id} className="wishlist-item">
+                    <img src={item.image_url} alt={item.name} className="wishlist-item-image" />
+                    <div className="wishlist-item-info">
+                      <h4>{item.name}</h4>
+                      <p>${item.price}</p>
+                      <div className="wishlist-actions">
+                        <button 
+                          className="btn btn-primary"
+                          onClick={() => addToCart(item)}
+                        >
+                          Add to Cart
+                        </button>
+                        <button 
+                          className="btn btn-secondary"
+                          onClick={() => removeFromWishlist(item.id)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Orders Modal */}
+      {showOrders && (
+        <div className="modal-overlay" onClick={() => setShowOrders(false)}>
+          <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setShowOrders(false)}>×</button>
+            <h2>My Orders</h2>
+            {orders.length === 0 ? (
+              <p>No orders found</p>
+            ) : (
+              <div className="orders-list">
+                {orders.map(order => (
+                  <div key={order.order_id} className="order-item">
+                    <div className="order-header">
+                      <h4>Order #{order.order_id.substring(0, 8)}</h4>
+                      <span className={`order-status ${order.order_status}`}>
+                        {order.order_status.charAt(0).toUpperCase() + order.order_status.slice(1)}
+                      </span>
+                    </div>
+                    <div className="order-details">
+                      <p><strong>Date:</strong> {new Date(order.created_at).toLocaleDateString()}</p>
+                      <p><strong>Total:</strong> ${order.total_amount}</p>
+                      <p><strong>Items:</strong> {order.items?.length || 0} items</p>
+                    </div>
+                    <div className="order-items">
+                      {order.items?.map((item, index) => (
+                        <div key={index} className="order-item-detail">
+                          <span>{item.name} x{item.quantity}</span>
+                          <span>${(item.unit_amount * item.quantity).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Profile Modal */}
+      {showProfile && (
+        <div className="modal-overlay" onClick={() => setShowProfile(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setShowProfile(false)}>×</button>
+            <h2>My Profile</h2>
+            <div className="profile-info">
+              <div className="profile-field">
+                <label>Email:</label>
+                <p>{currentUser?.email}</p>
+              </div>
+              <div className="profile-field">
+                <label>Name:</label>
+                <p>{currentUser?.first_name} {currentUser?.last_name}</p>
+              </div>
+              <div className="profile-field">
+                <label>Phone:</label>
+                <p>{currentUser?.phone || 'Not provided'}</p>
+              </div>
+              <div className="profile-field">
+                <label>Address:</label>
+                <p>{currentUser?.address || 'Not provided'}</p>
+              </div>
+              <div className="profile-field">
+                <label>City, State:</label>
+                <p>{currentUser?.city || 'Not provided'}, {currentUser?.state || 'Not provided'}</p>
+              </div>
+              <div className="profile-field">
+                <label>ZIP Code:</label>
+                <p>{currentUser?.zip_code || 'Not provided'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Modal */}
       {showCheckout && (
-        <section className="checkout-section">
-          <div className="container">
+        <div className="modal-overlay" onClick={() => setShowCheckout(false)}>
+          <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setShowCheckout(false)}>×</button>
             <h2>Checkout</h2>
             <div className="checkout-content">
-              <div className="checkout-form">
+              <div className="checkout-left">
                 <h3>Shipping Information</h3>
                 <div className="form-group">
                   <input
@@ -402,19 +844,23 @@ const App = () => {
                     onChange={(e) => setShippingInfo({...shippingInfo, address: e.target.value})}
                   />
                 </div>
-                <div className="form-row">
+                <div className="form-group">
                   <input
                     type="text"
                     placeholder="City"
                     value={shippingInfo.city}
                     onChange={(e) => setShippingInfo({...shippingInfo, city: e.target.value})}
                   />
+                </div>
+                <div className="form-group">
                   <input
                     type="text"
                     placeholder="State"
                     value={shippingInfo.state}
                     onChange={(e) => setShippingInfo({...shippingInfo, state: e.target.value})}
                   />
+                </div>
+                <div className="form-group">
                   <input
                     type="text"
                     placeholder="ZIP Code"
@@ -424,7 +870,7 @@ const App = () => {
                 </div>
                 
                 <h3>Discount Code</h3>
-                <div className="discount-section">
+                <div className="form-group">
                   <input
                     type="text"
                     placeholder="Enter discount code"
@@ -435,16 +881,17 @@ const App = () => {
                 </div>
               </div>
               
-              <div className="order-summary">
+              <div className="checkout-right">
                 <h3>Order Summary</h3>
                 {cart.map(item => (
-                  <div key={item.id} className="summary-item">
-                    <span>{item.name} x {item.quantity}</span>
+                  <div key={item.id} className="checkout-item">
+                    <span>{item.name} x{item.quantity}</span>
                     <span>${(item.price * item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
+                
                 {orderTotal && (
-                  <div className="totals">
+                  <div className="order-totals">
                     <div className="total-line">
                       <span>Subtotal:</span>
                       <span>${orderTotal.subtotal}</span>
@@ -469,81 +916,15 @@ const App = () => {
                     </div>
                   </div>
                 )}
-                <button 
-                  className="payment-btn"
-                  onClick={() => alert('Payment integration coming in Phase 2!')}
-                  style={{ display: 'none' }}
-                >
-                  Proceed to Payment
-                </button>
+                
                 <PayPalCheckout
                   cart={cart}
-                  orderTotal={orderTotal}
+                  total={orderTotal?.total || 0}
                   shippingInfo={shippingInfo}
                   discountCode={discountCode}
-                  onSuccess={handlePaymentSuccess}
-                  onError={handlePaymentError}
+                  onPaymentSuccess={handlePaymentSuccess}
+                  onPaymentError={handlePaymentError}
                 />
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Payment Success View */}
-      {paymentSuccess && orderDetails && (
-        <section className="success-section">
-          <div className="container">
-            <div className="success-content">
-              <h2>🎉 Payment Successful!</h2>
-              <div className="order-confirmation">
-                <h3>Order Confirmation</h3>
-                <p><strong>Order ID:</strong> {orderDetails.order_id}</p>
-                <p><strong>Payment ID:</strong> {orderDetails.id}</p>
-                <p><strong>Total Amount:</strong> ${orderDetails.total_amount}</p>
-                <p><strong>Status:</strong> {orderDetails.status}</p>
-                <p className="success-message">
-                  Thank you for your purchase! Your order has been confirmed and will be processed shortly.
-                </p>
-                <button 
-                  className="continue-shopping-btn"
-                  onClick={resetToShopping}
-                >
-                  Continue Shopping
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Plant Detail Modal */}
-      {selectedPlant && (
-        <div className="modal-overlay" onClick={() => setSelectedPlant(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setSelectedPlant(null)}>×</button>
-            <div className="plant-detail">
-              <img src={selectedPlant.image_url} alt={selectedPlant.name} />
-              <div className="plant-detail-info">
-                <h2>{selectedPlant.name}</h2>
-                <p className="price">${selectedPlant.price}</p>
-                <p className="description">{selectedPlant.description}</p>
-                <div className="care-info">
-                  <h3>Care Instructions</h3>
-                  <p>{selectedPlant.care_instructions}</p>
-                  <h3>Sunlight Requirements</h3>
-                  <p>{selectedPlant.sunlight_requirements}</p>
-                </div>
-                <button 
-                  className="add-to-cart-btn"
-                  onClick={() => {
-                    addToCart(selectedPlant);
-                    setSelectedPlant(null);
-                  }}
-                  disabled={selectedPlant.stock_quantity === 0}
-                >
-                  {selectedPlant.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
-                </button>
               </div>
             </div>
           </div>
@@ -553,80 +934,72 @@ const App = () => {
       {/* Auth Modal */}
       {showAuth && (
         <div className="modal-overlay" onClick={() => setShowAuth(false)}>
-          <div className="modal-content auth-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="close-btn" onClick={() => setShowAuth(false)}>×</button>
-            <div className="auth-content">
-              <h2>{authMode === 'login' ? 'Login' : 'Register'}</h2>
-              <AuthForm 
-                mode={authMode}
-                onSubmit={handleAuth}
-                onToggleMode={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-              />
-            </div>
+            <h2>{authMode === 'login' ? 'Login' : 'Register'}</h2>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              const data = Object.fromEntries(formData);
+              handleAuth(data);
+            }}>
+              <div className="form-group">
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="Email"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Password"
+                  required
+                />
+              </div>
+              {authMode === 'register' && (
+                <>
+                  <div className="form-group">
+                    <input
+                      type="text"
+                      name="first_name"
+                      placeholder="First Name"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <input
+                      type="text"
+                      name="last_name"
+                      placeholder="Last Name"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <input
+                      type="tel"
+                      name="phone"
+                      placeholder="Phone (optional)"
+                    />
+                  </div>
+                </>
+              )}
+              <button type="submit" className="auth-submit-btn">
+                {authMode === 'login' ? 'Login' : 'Register'}
+              </button>
+            </form>
+            <button 
+              className="auth-toggle-btn"
+              onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+            >
+              {authMode === 'login' ? 'Need an account? Register' : 'Already have an account? Login'}
+            </button>
           </div>
         </div>
       )}
     </div>
-  );
-};
-
-const AuthForm = ({ mode, onSubmit, onToggleMode }) => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    first_name: '',
-    last_name: ''
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="auth-form">
-      {mode === 'register' && (
-        <div className="form-row">
-          <input
-            type="text"
-            placeholder="First Name"
-            value={formData.first_name}
-            onChange={(e) => setFormData({...formData, first_name: e.target.value})}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Last Name"
-            value={formData.last_name}
-            onChange={(e) => setFormData({...formData, last_name: e.target.value})}
-            required
-          />
-        </div>
-      )}
-      <input
-        type="email"
-        placeholder="Email"
-        value={formData.email}
-        onChange={(e) => setFormData({...formData, email: e.target.value})}
-        required
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={formData.password}
-        onChange={(e) => setFormData({...formData, password: e.target.value})}
-        required
-      />
-      <button type="submit" className="auth-submit-btn">
-        {mode === 'login' ? 'Login' : 'Register'}
-      </button>
-      <p className="auth-toggle">
-        {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
-        <button type="button" onClick={onToggleMode}>
-          {mode === 'login' ? 'Register' : 'Login'}
-        </button>
-      </p>
-    </form>
   );
 };
 
