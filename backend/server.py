@@ -445,6 +445,190 @@ async def validate_discount(discount_code: str):
         "description": f"{'Save ' + str(discount['value']) + '%' if discount['type'] == 'percentage' else 'Save $' + str(discount['value'])}"
     }
 
+# PayPal Payment endpoints
+@app.post("/api/paypal/create-order")
+async def create_paypal_order(order_request: PayPalOrderRequest):
+    try:
+        # Generate unique order ID
+        order_id = str(uuid.uuid4())
+        
+        # Create PayPal payment
+        payment = Payment({
+            "intent": "sale",
+            "payer": {
+                "payment_method": "paypal"
+            },
+            "redirect_urls": {
+                "return_url": "http://localhost:3000/payment/success",
+                "cancel_url": "http://localhost:3000/payment/cancel"
+            },
+            "transactions": [{
+                "item_list": {
+                    "items": [{
+                        "name": item.name,
+                        "sku": item.sku or f"item-{uuid.uuid4()}",
+                        "price": f"{item.unit_amount:.2f}",
+                        "currency": order_request.currency,
+                        "quantity": item.quantity
+                    } for item in order_request.items]
+                },
+                "amount": {
+                    "total": f"{order_request.total_amount:.2f}",
+                    "currency": order_request.currency
+                },
+                "description": f"Order {order_id} - Green Haven Nursery"
+            }]
+        })
+        
+        if payment.create():
+            # Store order in database
+            paypal_order = {
+                "id": order_id,
+                "order_id": order_id,
+                "paypal_order_id": payment.id,
+                "customer_email": order_request.customer_email,
+                "total_amount": order_request.total_amount,
+                "currency": order_request.currency,
+                "status": "CREATED",
+                "items": [item.dict() for item in order_request.items],
+                "shipping_info": order_request.shipping_info.dict() if order_request.shipping_info else None,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            }
+            
+            await db.paypal_orders.insert_one(paypal_order)
+            
+            # Get approval URL
+            approval_url = None
+            for link in payment.links:
+                if link.rel == "approval_url":
+                    approval_url = link.href
+                    break
+            
+            return {
+                "id": payment.id,
+                "order_id": order_id,
+                "status": "CREATED",
+                "approval_url": approval_url,
+                "links": [{"href": link.href, "rel": link.rel, "method": link.method} for link in payment.links]
+            }
+        else:
+            raise HTTPException(status_code=400, detail=f"PayPal payment creation failed: {payment.error}")
+            
+    except Exception as e:
+        logging.error(f"Error creating PayPal order: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error creating PayPal order: {str(e)}")
+
+@app.post("/api/paypal/execute-payment")
+async def execute_paypal_payment(payment_id: str, payer_id: str):
+    try:
+        # Get the payment
+        payment = Payment.find(payment_id)
+        
+        if payment.execute({"payer_id": payer_id}):
+            # Update order status in database
+            await db.paypal_orders.update_one(
+                {"paypal_order_id": payment_id},
+                {
+                    "$set": {
+                        "status": "COMPLETED",
+                        "updated_at": datetime.utcnow(),
+                        "payer_id": payer_id,
+                        "payment_details": payment.to_dict()
+                    }
+                }
+            )
+            
+            # Get order details for processing
+            order = await db.paypal_orders.find_one({"paypal_order_id": payment_id})
+            if order:
+                # Process order completion - update inventory
+                await process_order_completion(order)
+            
+            return {
+                "id": payment.id,
+                "status": "COMPLETED",
+                "order_id": order["order_id"] if order else None,
+                "total_amount": payment.transactions[0].amount.total
+            }
+        else:
+            raise HTTPException(status_code=400, detail=f"PayPal payment execution failed: {payment.error}")
+            
+    except Exception as e:
+        logging.error(f"Error executing PayPal payment: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error executing PayPal payment: {str(e)}")
+
+@app.get("/api/paypal/payment/{payment_id}")
+async def get_paypal_payment(payment_id: str):
+    try:
+        payment = Payment.find(payment_id)
+        return payment.to_dict()
+    except Exception as e:
+        logging.error(f"Error getting PayPal payment: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting PayPal payment: {str(e)}")
+
+@app.get("/api/orders")
+async def get_orders(user_id: Optional[str] = None):
+    try:
+        query = {}
+        if user_id:
+            query["customer_email"] = user_id  # This should be improved to use proper user ID
+        
+        orders_cursor = db.paypal_orders.find(query)
+        orders = await orders_cursor.to_list(length=None)
+        
+        # Convert MongoDB documents to serializable format
+        serialized_orders = []
+        for order in orders:
+            if "_id" in order:
+                order["_id"] = str(order["_id"])
+            serialized_orders.append(order)
+        
+        return serialized_orders
+    except Exception as e:
+        logging.error(f"Error getting orders: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting orders: {str(e)}")
+
+@app.get("/api/orders/{order_id}")
+async def get_order(order_id: str):
+    try:
+        order = await db.paypal_orders.find_one({"order_id": order_id})
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+        
+        # Convert _id to string if it exists
+        if "_id" in order:
+            order["_id"] = str(order["_id"])
+        
+        return order
+    except Exception as e:
+        logging.error(f"Error getting order: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting order: {str(e)}")
+
+async def process_order_completion(order):
+    """Process order completion - update inventory, send notifications, etc."""
+    try:
+        # Update plant inventory
+        for item in order["items"]:
+            plant_id = item.get("sku", "").replace("plant_", "")
+            if plant_id:
+                await db.plants.update_one(
+                    {"id": plant_id},
+                    {"$inc": {"stock_quantity": -item["quantity"]}}
+                )
+        
+        # Here you could add:
+        # - Send confirmation email
+        # - Generate invoice
+        # - Update order status
+        # - Send notifications
+        
+        logging.info(f"Order {order['order_id']} processed successfully")
+        
+    except Exception as e:
+        logging.error(f"Error processing order completion: {str(e)}")
+        # Don't raise exception here to avoid breaking the payment flow
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
