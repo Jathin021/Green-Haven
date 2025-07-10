@@ -9,7 +9,7 @@ class NurseryAPITester(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(NurseryAPITester, self).__init__(*args, **kwargs)
         # Get the backend URL from the frontend .env file
-        self.base_url = "https://cfd9baaa-f5f8-437c-a108-49c9a10de1f9.preview.emergentagent.com"
+        self.base_url = "https://b395a8f9-a5f3-4ca7-90da-44a312b2815f.preview.emergentagent.com"
         self.token = None
         self.user_id = None
         self.test_user_email = f"test_user_{uuid.uuid4()}@example.com"
