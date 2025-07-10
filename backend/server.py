@@ -270,6 +270,11 @@ async def get_plant(plant_id: str):
     plant = await db.plants.find_one({"id": plant_id})
     if not plant:
         raise HTTPException(status_code=404, detail="Plant not found")
+    
+    # Convert _id to string if it exists
+    if "_id" in plant:
+        plant["_id"] = str(plant["_id"])
+    
     return plant
 
 @app.get("/api/categories")
