@@ -472,9 +472,18 @@ const App = () => {
                 <button 
                   className="payment-btn"
                   onClick={() => alert('Payment integration coming in Phase 2!')}
+                  style={{ display: 'none' }}
                 >
                   Proceed to Payment
                 </button>
+                <PayPalCheckout
+                  cart={cart}
+                  orderTotal={orderTotal}
+                  shippingInfo={shippingInfo}
+                  discountCode={discountCode}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
               </div>
             </div>
           </div>
