@@ -193,6 +193,27 @@ const App = () => {
     }
   }, [cart, shippingInfo, discountCode, showCheckout]);
 
+  const handlePaymentSuccess = (paymentResult) => {
+    console.log('Payment successful:', paymentResult);
+    setPaymentSuccess(true);
+    setOrderDetails(paymentResult);
+    setCart([]); // Clear cart
+    setShowCheckout(false);
+    alert(`Payment successful! Order ID: ${paymentResult.order_id}`);
+  };
+
+  const handlePaymentError = (error) => {
+    console.error('Payment error:', error);
+    alert('Payment failed. Please try again.');
+  };
+
+  const resetToShopping = () => {
+    setPaymentSuccess(false);
+    setOrderDetails(null);
+    setShowCart(false);
+    setShowCheckout(false);
+  };
+
   const filteredPlants = filterPlants();
 
   return (
