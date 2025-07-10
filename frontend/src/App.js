@@ -16,6 +16,8 @@ const App = () => {
   const [showCheckout, setShowCheckout] = useState(false);
   const [discountCode, setDiscountCode] = useState('');
   const [orderTotal, setOrderTotal] = useState(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [orderDetails, setOrderDetails] = useState(null);
   const [shippingInfo, setShippingInfo] = useState({
     address: '',
     city: '',
