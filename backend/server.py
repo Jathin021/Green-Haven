@@ -975,6 +975,10 @@ async def reset_plants(request: Request):
     await db.plants.insert_many(SAMPLE_PLANTS)
     return {"message": "Plants collection reset and re-initialized with sample data."}
 
+@app.get("/")
+def root():
+    return {"message": "Green Haven Nursery API is running!"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
