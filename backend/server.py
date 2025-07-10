@@ -9,6 +9,9 @@ import uuid
 from datetime import datetime
 import jwt
 from passlib.context import CryptContext
+import paypalrestsdk
+from paypalrestsdk import Payment, BillingPlan, BillingAgreement
+import logging
 
 # Models
 class Plant(BaseModel):
