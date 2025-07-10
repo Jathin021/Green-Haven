@@ -15,6 +15,8 @@ class NurseryAPITester(unittest.TestCase):
         self.test_user_email = f"test_user_{uuid.uuid4()}@example.com"
         self.test_password = "Test123!"
         self.test_plant_id = "plant_001"  # Monstera Deliciosa from sample data
+        self.test_order_id = None
+        self.test_review_id = None
 
     def setUp(self):
         print(f"\n🔍 Testing against API: {self.base_url}")
