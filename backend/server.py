@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi import FastAPI, HTTPException, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -145,19 +145,20 @@ class WishlistItem(BaseModel):
 # FastAPI app
 app = FastAPI()
 
-# CORS middleware
+# Security
+security = HTTPBearer()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-here-change-in-production")  # Set SECRET_KEY in production!
+
+# CORS origins
+ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Security
-security = HTTPBearer()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = "your-secret-key-here-change-in-production"
 
 # Database
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
@@ -179,7 +180,7 @@ SAMPLE_PLANTS = [
     {
         "id": "plant_001",
         "name": "Monstera Deliciosa",
-        "price": 29.99,
+        "price": 2.99,
         "description": "Beautiful tropical plant with large, glossy leaves and natural splits. Perfect for bright, indirect light.",
         "care_instructions": "Water when top inch of soil is dry. Provide bright, indirect light. Mist occasionally for humidity.",
         "sunlight_requirements": "Bright, indirect light",
@@ -193,7 +194,7 @@ SAMPLE_PLANTS = [
     {
         "id": "plant_002", 
         "name": "Snake Plant",
-        "price": 19.99,
+        "price": 1.99,
         "description": "Low-maintenance succulent with upright, sword-like leaves. Great for beginners and low-light conditions.",
         "care_instructions": "Water every 2-3 weeks. Tolerates low light but prefers bright, indirect light.",
         "sunlight_requirements": "Low to bright, indirect light",
@@ -207,7 +208,7 @@ SAMPLE_PLANTS = [
     {
         "id": "plant_003",
         "name": "Fiddle Leaf Fig",
-        "price": 49.99,
+        "price": 2.49,
         "description": "Statement plant with large, violin-shaped leaves. A popular choice for modern interiors.",
         "care_instructions": "Water when top 2 inches of soil are dry. Needs bright, indirect light and consistent watering.",
         "sunlight_requirements": "Bright, indirect light",
@@ -221,7 +222,7 @@ SAMPLE_PLANTS = [
     {
         "id": "plant_004",
         "name": "Pothos",
-        "price": 15.99,
+        "price": 2.29,
         "description": "Trailing vine with heart-shaped leaves. Perfect for hanging baskets or climbing up poles.",
         "care_instructions": "Water when soil surface is dry. Thrives in various light conditions.",
         "sunlight_requirements": "Low to bright, indirect light",
@@ -235,7 +236,7 @@ SAMPLE_PLANTS = [
     {
         "id": "plant_005",
         "name": "Succulent Collection",
-        "price": 24.99,
+        "price": 2.79,
         "description": "Beautiful collection of mixed succulents in decorative pots. Low maintenance and colorful.",
         "care_instructions": "Water sparingly, every 2-3 weeks. Provide bright light and good drainage.",
         "sunlight_requirements": "Bright, direct light",
@@ -962,6 +963,17 @@ async def process_order_completion(order):
     except Exception as e:
         logging.error(f"Error processing order completion: {str(e)}")
         # Don't raise exception here to avoid breaking the payment flow
+
+@app.post("/api/admin/reset-plants")
+async def reset_plants(request: Request):
+    # Simple admin protection (use a header 'x-admin-token')
+    admin_token = os.environ.get("ADMIN_RESET_TOKEN", "changeme")
+    req_token = request.headers.get("x-admin-token")
+    if req_token != admin_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    await db.plants.delete_many({})
+    await db.plants.insert_many(SAMPLE_PLANTS)
+    return {"message": "Plants collection reset and re-initialized with sample data."}
 
 if __name__ == "__main__":
     import uvicorn

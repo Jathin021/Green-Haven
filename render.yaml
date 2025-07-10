@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: green-haven-backend
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn server:app --host 0.0.0.0 --port 8000"
+    rootDir: backend
+    envVars:
+      - key: SECRET_KEY
+        value: "your-production-secret-key"
+      - key: MONGO_URL
+        value: "your-mongodb-uri"
+      - key: PAYPAL_CLIENT_ID
+        value: "your-paypal-client-id"
+      - key: PAYPAL_SECRET
+        value: "your-paypal-secret"
+      - key: PAYPAL_MODE
+        value: "sandbox" # or "live" for production
+      - key: ALLOWED_ORIGINS
+        value: "https://green-haven-frontend.onrender.com"
+      - key: ADMIN_RESET_TOKEN
+        value: "your-admin-reset-token"
+  - type: static
+    name: green-haven-frontend
+    rootDir: frontend
+    buildCommand: "yarn build"
+    staticPublishPath: build
+    envVars:
+      - key: REACT_APP_BACKEND_URL
+        value: "https://green-haven-backend.onrender.com"
+      - key: REACT_APP_PAYPAL_CLIENT_ID
+        value: "your-paypal-client-id" 

@@ -196,10 +196,19 @@ body {
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
+  border-bottom: 2px solid #a5d6a7;
 }
 
 .plant-card:hover .plant-image img {
-  transform: scale(1.05);
+  transform: scale(1.07) rotate(-1deg);
+}
+
+.plant-image::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0; top: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0) 60%, rgba(76,175,80,0.08) 100%);
+  pointer-events: none;
 }
 
 .plant-overlay {
@@ -795,18 +804,91 @@ body {
 
 /* Animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Plant Card Animation */
+.plant-card {
+  animation: fadeIn 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: 0 4px 20px rgba(76, 175, 80, 0.10);
+  transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.3s;
+}
+
+.plant-card:hover {
+  transform: scale(1.04) translateY(-8px);
+  box-shadow: 0 12px 35px rgba(76, 175, 80, 0.18);
+}
+
+/* Modal Animation & Blur */
+.modal-overlay {
+  background: rgba(44, 62, 80, 0.25);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.4s;
+}
+
+.modal-content {
+  animation: fadeIn 0.5s;
+  border-radius: 18px;
+  box-shadow: 0 8px 40px rgba(76, 175, 80, 0.18);
+}
+
+/* Button & Input Enhancements */
+.btn, .add-to-cart-btn, .checkout-btn, .payment-btn, .auth-btn, .nav-btn {
+  background: linear-gradient(90deg, #43ea7a 0%, #4a7c59 100%);
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  padding: 0.6rem 1.4rem;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.10);
+  transition: background 0.3s, box-shadow 0.3s, transform 0.2s;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn:hover, .add-to-cart-btn:hover, .checkout-btn:hover, .payment-btn:hover, .auth-btn:hover, .nav-btn:hover {
+  background: linear-gradient(90deg, #4a7c59 0%, #43ea7a 100%);
+  box-shadow: 0 4px 16px rgba(76, 175, 80, 0.18);
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Accent Color for Highlights */
+:root {
+  --accent-green: #43ea7a;
+  --accent-dark: #2d5a27;
+}
+
+a, .wishlist-btn.in-wishlist, .star.filled {
+  color: var(--accent-green) !important;
+}
+
+/* Responsive Sticky Cart Bar for Mobile */
+@media (max-width: 600px) {
+  .cart-btn {
+    position: fixed;
+    bottom: 18px;
+    right: 18px;
+    z-index: 1000;
+    background: linear-gradient(90deg, #43ea7a 0%, #4a7c59 100%);
+    color: #fff;
+    border-radius: 50px;
+    box-shadow: 0 4px 16px rgba(76, 175, 80, 0.18);
+    font-size: 1.1rem;
+    padding: 0.8rem 1.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 }
 
-.plant-card {
-  animation: fadeIn 0.5s ease-out;
+/* Soft Background Pattern */
+body {
+  background: linear-gradient(120deg, #f8fffe 0%, #e8f5e9 100%);
 }
 
 /* Accessibility */
