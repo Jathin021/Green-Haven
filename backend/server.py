@@ -25,6 +25,8 @@ class Plant(BaseModel):
     stock_quantity: int
     image_url: str
     weight: float = 2.0
+    average_rating: float = 0.0
+    total_reviews: int = 0
 
 class CartItem(BaseModel):
     plant_id: str
@@ -37,16 +39,33 @@ class User(BaseModel):
     first_name: str
     last_name: str
     created_at: datetime
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip_code: Optional[str] = None
+    country: Optional[str] = "US"
 
 class UserRegister(BaseModel):
     email: str
     password: str
     first_name: str
     last_name: str
+    phone: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: str
     password: str
+
+class UserProfile(BaseModel):
+    first_name: str
+    last_name: str
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip_code: Optional[str] = None
+    country: Optional[str] = "US"
 
 class ShippingInfo(BaseModel):
     address: str
@@ -87,6 +106,7 @@ class PayPalOrder(BaseModel):
     order_id: str
     paypal_order_id: str
     customer_email: Optional[str]
+    user_id: Optional[str]
     total_amount: float
     currency: str
     status: str
@@ -94,6 +114,33 @@ class PayPalOrder(BaseModel):
     shipping_info: Optional[ShippingInfo] = None
     created_at: datetime
     updated_at: datetime
+    order_status: str = "pending"  # pending, processing, shipped, delivered, cancelled
+
+class OrderStatusUpdate(BaseModel):
+    order_id: str
+    status: str  # pending, processing, shipped, delivered, cancelled
+    tracking_number: Optional[str] = None
+    notes: Optional[str] = None
+
+class Review(BaseModel):
+    id: str
+    plant_id: str
+    user_id: str
+    user_name: str
+    rating: int  # 1-5
+    comment: str
+    created_at: datetime
+    helpful_count: int = 0
+
+class ReviewCreate(BaseModel):
+    plant_id: str
+    rating: int
+    comment: str
+
+class WishlistItem(BaseModel):
+    user_id: str
+    plant_id: str
+    created_at: datetime
 
 # FastAPI app
 app = FastAPI()
@@ -139,7 +186,9 @@ SAMPLE_PLANTS = [
         "category": "houseplant",
         "stock_quantity": 25,
         "image_url": "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwxfHxwbGFudHN8ZW58MHx8fHwxNzUyMTcwMDcyfDA&ixlib=rb-4.1.0&q=85",
-        "weight": 3.5
+        "weight": 3.5,
+        "average_rating": 4.5,
+        "total_reviews": 12
     },
     {
         "id": "plant_002", 
@@ -151,7 +200,9 @@ SAMPLE_PLANTS = [
         "category": "houseplant",
         "stock_quantity": 40,
         "image_url": "https://images.unsplash.com/photo-1470058869958-2a77ade41c02?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwyfHxwbGFudHN8ZW58MHx8fHwxNzUyMTcwMDcyfDA&ixlib=rb-4.1.0&q=85",
-        "weight": 2.0
+        "weight": 2.0,
+        "average_rating": 4.8,
+        "total_reviews": 25
     },
     {
         "id": "plant_003",
@@ -163,7 +214,9 @@ SAMPLE_PLANTS = [
         "category": "houseplant",
         "stock_quantity": 15,
         "image_url": "https://images.unsplash.com/photo-1601985705806-5b9a71f6004f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwzfHxwbGFudHN8ZW58MHx8fHwxNzUyMTcwMDcyfDA&ixlib=rb-4.1.0&q=85",
-        "weight": 4.0
+        "weight": 4.0,
+        "average_rating": 4.2,
+        "total_reviews": 8
     },
     {
         "id": "plant_004",
@@ -175,7 +228,9 @@ SAMPLE_PLANTS = [
         "category": "houseplant",
         "stock_quantity": 35,
         "image_url": "https://images.pexels.com/photos/807598/pexels-photo-807598.jpeg",
-        "weight": 1.5
+        "weight": 1.5,
+        "average_rating": 4.7,
+        "total_reviews": 18
     },
     {
         "id": "plant_005",
@@ -187,7 +242,9 @@ SAMPLE_PLANTS = [
         "category": "succulent",
         "stock_quantity": 20,
         "image_url": "https://images.pexels.com/photos/1470171/pexels-photo-1470171.jpeg",
-        "weight": 2.5
+        "weight": 2.5,
+        "average_rating": 4.3,
+        "total_reviews": 15
     },
     {
         "id": "plant_006",
@@ -199,7 +256,9 @@ SAMPLE_PLANTS = [
         "category": "flowering",
         "stock_quantity": 18,
         "image_url": "https://images.pexels.com/photos/776656/pexels-photo-776656.jpeg",
-        "weight": 3.0
+        "weight": 3.0,
+        "average_rating": 4.6,
+        "total_reviews": 22
     },
     {
         "id": "plant_007",
@@ -211,7 +270,9 @@ SAMPLE_PLANTS = [
         "category": "houseplant",
         "stock_quantity": 22,
         "image_url": "https://images.unsplash.com/photo-1592150621744-aca64f48394a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxfHxob3VzZXBsYW50c3xlbnwwfHx8fDE3NTIxNzAwNzh8MA&ixlib=rb-4.1.0&q=85",
-        "weight": 4.5
+        "weight": 4.5,
+        "average_rating": 4.4,
+        "total_reviews": 10
     },
     {
         "id": "plant_008",
@@ -223,7 +284,9 @@ SAMPLE_PLANTS = [
         "category": "houseplant",
         "stock_quantity": 30,
         "image_url": "https://images.unsplash.com/photo-1583753075968-1236ccb83c66?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwyfHxob3VzZXBsYW50c3xlbnwwfHx8fDE3NTIxNzAwNzh8MA&ixlib=rb-4.1.0&q=85",
-        "weight": 2.8
+        "weight": 2.8,
+        "average_rating": 4.9,
+        "total_reviews": 31
     }
 ]
 
@@ -245,6 +308,30 @@ SAMPLE_DISCOUNT_CODES = [
     }
 ]
 
+# Sample reviews
+SAMPLE_REVIEWS = [
+    {
+        "id": "review_001",
+        "plant_id": "plant_001",
+        "user_id": "user_001",
+        "user_name": "John D.",
+        "rating": 5,
+        "comment": "Amazing plant! Very healthy and beautiful. Exactly as described.",
+        "created_at": datetime(2024, 12, 1),
+        "helpful_count": 5
+    },
+    {
+        "id": "review_002",
+        "plant_id": "plant_002",
+        "user_id": "user_002",
+        "user_name": "Sarah M.",
+        "rating": 5,
+        "comment": "Perfect for beginners! Very low maintenance and looks great.",
+        "created_at": datetime(2024, 11, 15),
+        "helpful_count": 8
+    }
+]
+
 # Initialize database
 @app.on_event("startup")
 async def startup_event():
@@ -259,6 +346,12 @@ async def startup_event():
     if discount_count == 0:
         await db.discount_codes.insert_many(SAMPLE_DISCOUNT_CODES)
         print("Sample discount codes added to database")
+    
+    # Check if reviews exist and initialize
+    reviews_count = await db.reviews.count_documents({})
+    if reviews_count == 0:
+        await db.reviews.insert_many(SAMPLE_REVIEWS)
+        print("Sample reviews added to database")
 
 # Utility functions
 def create_access_token(data: dict):
@@ -282,7 +375,13 @@ def verify_password(plain_password: str, hashed_password: str):
 
 # Plants endpoints
 @app.get("/api/plants")
-async def get_plants(category: Optional[str] = None, search: Optional[str] = None):
+async def get_plants(
+    category: Optional[str] = None, 
+    search: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    sort_by: Optional[str] = None  # price_asc, price_desc, rating, name
+):
     query = {}
     if category:
         query["category"] = category
@@ -291,8 +390,25 @@ async def get_plants(category: Optional[str] = None, search: Optional[str] = Non
             {"name": {"$regex": search, "$options": "i"}},
             {"description": {"$regex": search, "$options": "i"}}
         ]
+    if min_price is not None or max_price is not None:
+        price_query = {}
+        if min_price is not None:
+            price_query["$gte"] = min_price
+        if max_price is not None:
+            price_query["$lte"] = max_price
+        query["price"] = price_query
     
-    plants_cursor = db.plants.find(query)
+    # Sorting
+    sort_options = {
+        "price_asc": [("price", 1)],
+        "price_desc": [("price", -1)],
+        "rating": [("average_rating", -1)],
+        "name": [("name", 1)],
+        "newest": [("created_at", -1)]
+    }
+    sort_criteria = sort_options.get(sort_by, [("name", 1)])
+    
+    plants_cursor = db.plants.find(query).sort(sort_criteria)
     plants = await plants_cursor.to_list(length=None)
     
     # Convert MongoDB documents to Pydantic models to handle ObjectId serialization
@@ -340,6 +456,7 @@ async def register(user_data: UserRegister):
         "password_hash": hashed_password,
         "first_name": user_data.first_name,
         "last_name": user_data.last_name,
+        "phone": user_data.phone,
         "created_at": datetime.utcnow()
     }
     
@@ -354,7 +471,8 @@ async def register(user_data: UserRegister):
             "id": user_id,
             "email": user_data.email,
             "first_name": user_data.first_name,
-            "last_name": user_data.last_name
+            "last_name": user_data.last_name,
+            "phone": user_data.phone
         }
     }
 
@@ -374,9 +492,44 @@ async def login(user_data: UserLogin):
             "id": user["id"],
             "email": user["email"],
             "first_name": user["first_name"],
-            "last_name": user["last_name"]
+            "last_name": user["last_name"],
+            "phone": user.get("phone"),
+            "address": user.get("address"),
+            "city": user.get("city"),
+            "state": user.get("state"),
+            "zip_code": user.get("zip_code"),
+            "country": user.get("country", "US")
         }
     }
+
+# User profile endpoints
+@app.get("/api/profile")
+async def get_profile(current_user: dict = Depends(verify_token)):
+    user = await db.users.find_one({"id": current_user["user_id"]})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {
+        "id": user["id"],
+        "email": user["email"],
+        "first_name": user["first_name"],
+        "last_name": user["last_name"],
+        "phone": user.get("phone"),
+        "address": user.get("address"),
+        "city": user.get("city"),
+        "state": user.get("state"),
+        "zip_code": user.get("zip_code"),
+        "country": user.get("country", "US"),
+        "created_at": user["created_at"]
+    }
+
+@app.put("/api/profile")
+async def update_profile(profile_data: UserProfile, current_user: dict = Depends(verify_token)):
+    await db.users.update_one(
+        {"id": current_user["user_id"]},
+        {"$set": profile_data.dict()}
+    )
+    return {"message": "Profile updated successfully"}
 
 # Cart and order endpoints
 @app.post("/api/calculate-total")
@@ -487,16 +640,18 @@ async def create_paypal_order(order_request: PayPalOrderRequest):
                 "order_id": order_id,
                 "paypal_order_id": payment.id,
                 "customer_email": order_request.customer_email,
+                "user_id": order_request.customer_email,  # Will be improved with proper user ID
                 "total_amount": order_request.total_amount,
                 "currency": order_request.currency,
                 "status": "CREATED",
+                "order_status": "pending",
                 "items": [item.dict() for item in order_request.items],
                 "shipping_info": order_request.shipping_info.dict() if order_request.shipping_info else None,
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow()
             }
             
-            await db.paypal_orders.insert_one(paypal_order)
+            await db.orders.insert_one(paypal_order)
             
             # Get approval URL
             approval_url = None
@@ -527,11 +682,12 @@ async def execute_paypal_payment(payment_id: str, payer_id: str):
         
         if payment.execute({"payer_id": payer_id}):
             # Update order status in database
-            await db.paypal_orders.update_one(
+            await db.orders.update_one(
                 {"paypal_order_id": payment_id},
                 {
                     "$set": {
                         "status": "COMPLETED",
+                        "order_status": "processing",
                         "updated_at": datetime.utcnow(),
                         "payer_id": payer_id,
                         "payment_details": payment.to_dict()
@@ -540,7 +696,7 @@ async def execute_paypal_payment(payment_id: str, payer_id: str):
             )
             
             # Get order details for processing
-            order = await db.paypal_orders.find_one({"paypal_order_id": payment_id})
+            order = await db.orders.find_one({"paypal_order_id": payment_id})
             if order:
                 # Process order completion - update inventory
                 await process_order_completion(order)
@@ -567,14 +723,12 @@ async def get_paypal_payment(payment_id: str):
         logging.error(f"Error getting PayPal payment: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting PayPal payment: {str(e)}")
 
+# Order Management endpoints
 @app.get("/api/orders")
-async def get_orders(user_id: Optional[str] = None):
+async def get_orders(current_user: dict = Depends(verify_token)):
     try:
-        query = {}
-        if user_id:
-            query["customer_email"] = user_id  # This should be improved to use proper user ID
-        
-        orders_cursor = db.paypal_orders.find(query)
+        # Get orders for current user
+        orders_cursor = db.orders.find({"user_id": current_user["user_id"]})
         orders = await orders_cursor.to_list(length=None)
         
         # Convert MongoDB documents to serializable format
@@ -590,9 +744,12 @@ async def get_orders(user_id: Optional[str] = None):
         raise HTTPException(status_code=500, detail=f"Error getting orders: {str(e)}")
 
 @app.get("/api/orders/{order_id}")
-async def get_order(order_id: str):
+async def get_order(order_id: str, current_user: dict = Depends(verify_token)):
     try:
-        order = await db.paypal_orders.find_one({"order_id": order_id})
+        order = await db.orders.find_one({
+            "order_id": order_id,
+            "user_id": current_user["user_id"]
+        })
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
         
@@ -604,6 +761,183 @@ async def get_order(order_id: str):
     except Exception as e:
         logging.error(f"Error getting order: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting order: {str(e)}")
+
+@app.put("/api/orders/{order_id}/status")
+async def update_order_status(order_id: str, status_update: OrderStatusUpdate, current_user: dict = Depends(verify_token)):
+    try:
+        # Only allow certain status updates for regular users
+        allowed_statuses = ["cancelled"]
+        if status_update.status not in allowed_statuses:
+            raise HTTPException(status_code=403, detail="Not authorized to update to this status")
+        
+        order = await db.orders.find_one({
+            "order_id": order_id,
+            "user_id": current_user["user_id"]
+        })
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+        
+        # Only allow cancellation if order is still pending or processing
+        if status_update.status == "cancelled" and order["order_status"] not in ["pending", "processing"]:
+            raise HTTPException(status_code=400, detail="Order cannot be cancelled at this stage")
+        
+        await db.orders.update_one(
+            {"order_id": order_id},
+            {
+                "$set": {
+                    "order_status": status_update.status,
+                    "updated_at": datetime.utcnow(),
+                    "status_notes": status_update.notes
+                }
+            }
+        )
+        
+        return {"message": "Order status updated successfully"}
+    except Exception as e:
+        logging.error(f"Error updating order status: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error updating order status: {str(e)}")
+
+# Review endpoints
+@app.get("/api/plants/{plant_id}/reviews")
+async def get_plant_reviews(plant_id: str, limit: int = 10, offset: int = 0):
+    try:
+        reviews_cursor = db.reviews.find({"plant_id": plant_id}).skip(offset).limit(limit).sort("created_at", -1)
+        reviews = await reviews_cursor.to_list(length=None)
+        
+        serialized_reviews = []
+        for review in reviews:
+            if "_id" in review:
+                review["_id"] = str(review["_id"])
+            serialized_reviews.append(review)
+        
+        return serialized_reviews
+    except Exception as e:
+        logging.error(f"Error getting reviews: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting reviews: {str(e)}")
+
+@app.post("/api/plants/{plant_id}/reviews")
+async def create_review(plant_id: str, review_data: ReviewCreate, current_user: dict = Depends(verify_token)):
+    try:
+        # Check if user has already reviewed this plant
+        existing_review = await db.reviews.find_one({
+            "plant_id": plant_id,
+            "user_id": current_user["user_id"]
+        })
+        if existing_review:
+            raise HTTPException(status_code=400, detail="You have already reviewed this plant")
+        
+        # Get user info
+        user = await db.users.find_one({"id": current_user["user_id"]})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Create review
+        review_id = str(uuid.uuid4())
+        review = {
+            "id": review_id,
+            "plant_id": plant_id,
+            "user_id": current_user["user_id"],
+            "user_name": f"{user['first_name']} {user['last_name'][0]}.",
+            "rating": review_data.rating,
+            "comment": review_data.comment,
+            "created_at": datetime.utcnow(),
+            "helpful_count": 0
+        }
+        
+        await db.reviews.insert_one(review)
+        
+        # Update plant's average rating
+        await update_plant_rating(plant_id)
+        
+        return {"message": "Review created successfully", "review_id": review_id}
+    except Exception as e:
+        logging.error(f"Error creating review: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error creating review: {str(e)}")
+
+async def update_plant_rating(plant_id: str):
+    """Update plant's average rating and review count"""
+    try:
+        # Get all reviews for this plant
+        reviews = await db.reviews.find({"plant_id": plant_id}).to_list(length=None)
+        
+        if reviews:
+            total_rating = sum(review["rating"] for review in reviews)
+            average_rating = total_rating / len(reviews)
+            
+            await db.plants.update_one(
+                {"id": plant_id},
+                {
+                    "$set": {
+                        "average_rating": round(average_rating, 1),
+                        "total_reviews": len(reviews)
+                    }
+                }
+            )
+    except Exception as e:
+        logging.error(f"Error updating plant rating: {str(e)}")
+
+# Wishlist endpoints
+@app.get("/api/wishlist")
+async def get_wishlist(current_user: dict = Depends(verify_token)):
+    try:
+        wishlist_cursor = db.wishlist.find({"user_id": current_user["user_id"]})
+        wishlist_items = await wishlist_cursor.to_list(length=None)
+        
+        # Get plant details for wishlist items
+        plant_ids = [item["plant_id"] for item in wishlist_items]
+        plants = await db.plants.find({"id": {"$in": plant_ids}}).to_list(length=None)
+        
+        # Convert to serializable format
+        serialized_plants = []
+        for plant in plants:
+            if "_id" in plant:
+                plant["_id"] = str(plant["_id"])
+            serialized_plants.append(plant)
+        
+        return serialized_plants
+    except Exception as e:
+        logging.error(f"Error getting wishlist: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting wishlist: {str(e)}")
+
+@app.post("/api/wishlist/{plant_id}")
+async def add_to_wishlist(plant_id: str, current_user: dict = Depends(verify_token)):
+    try:
+        # Check if already in wishlist
+        existing_item = await db.wishlist.find_one({
+            "user_id": current_user["user_id"],
+            "plant_id": plant_id
+        })
+        if existing_item:
+            raise HTTPException(status_code=400, detail="Plant already in wishlist")
+        
+        # Add to wishlist
+        wishlist_item = {
+            "user_id": current_user["user_id"],
+            "plant_id": plant_id,
+            "created_at": datetime.utcnow()
+        }
+        
+        await db.wishlist.insert_one(wishlist_item)
+        return {"message": "Plant added to wishlist"}
+    except Exception as e:
+        logging.error(f"Error adding to wishlist: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error adding to wishlist: {str(e)}")
+
+@app.delete("/api/wishlist/{plant_id}")
+async def remove_from_wishlist(plant_id: str, current_user: dict = Depends(verify_token)):
+    try:
+        result = await db.wishlist.delete_one({
+            "user_id": current_user["user_id"],
+            "plant_id": plant_id
+        })
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Plant not found in wishlist")
+        
+        return {"message": "Plant removed from wishlist"}
+    except Exception as e:
+        logging.error(f"Error removing from wishlist: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error removing from wishlist: {str(e)}")
 
 async def process_order_completion(order):
     """Process order completion - update inventory, send notifications, etc."""
@@ -620,7 +954,7 @@ async def process_order_completion(order):
         # Here you could add:
         # - Send confirmation email
         # - Generate invoice
-        # - Update order status
+        # - Update order status to processing
         # - Send notifications
         
         logging.info(f"Order {order['order_id']} processed successfully")
