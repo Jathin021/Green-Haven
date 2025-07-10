@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PayPalCheckout from './PayPalCheckout';
 import './App.css';
 
 const App = () => {
