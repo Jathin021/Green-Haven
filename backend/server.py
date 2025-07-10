@@ -381,7 +381,7 @@ async def calculate_total(order_data: OrderRequest):
         "total": round(total, 2)
     }
 
-@app.post("/api/validate-discount")
+@app.get("/api/validate-discount")
 async def validate_discount(discount_code: str):
     discount = await db.discount_codes.find_one({
         "code": discount_code,
@@ -393,6 +393,10 @@ async def validate_discount(discount_code: str):
     # Check if expired
     if discount["expires_at"] < datetime.utcnow():
         raise HTTPException(status_code=400, detail="Discount code has expired")
+    
+    # Convert _id to string if it exists
+    if "_id" in discount:
+        discount["_id"] = str(discount["_id"])
     
     return {
         "valid": True,
