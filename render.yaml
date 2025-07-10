@@ -21,7 +21,7 @@ services:
         value: "https://green-haven-frontend.onrender.com"
       - key: ADMIN_RESET_TOKEN
         value: "your-admin-reset-token"
-  - type: static
+  - type: static_site
     name: green-haven-frontend
     rootDir: frontend
     buildCommand: "yarn build"
