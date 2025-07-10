@@ -490,6 +490,33 @@ const App = () => {
         </section>
       )}
 
+      {/* Payment Success View */}
+      {paymentSuccess && orderDetails && (
+        <section className="success-section">
+          <div className="container">
+            <div className="success-content">
+              <h2>🎉 Payment Successful!</h2>
+              <div className="order-confirmation">
+                <h3>Order Confirmation</h3>
+                <p><strong>Order ID:</strong> {orderDetails.order_id}</p>
+                <p><strong>Payment ID:</strong> {orderDetails.id}</p>
+                <p><strong>Total Amount:</strong> ${orderDetails.total_amount}</p>
+                <p><strong>Status:</strong> {orderDetails.status}</p>
+                <p className="success-message">
+                  Thank you for your purchase! Your order has been confirmed and will be processed shortly.
+                </p>
+                <button 
+                  className="continue-shopping-btn"
+                  onClick={resetToShopping}
+                >
+                  Continue Shopping
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Plant Detail Modal */}
       {selectedPlant && (
         <div className="modal-overlay" onClick={() => setSelectedPlant(null)}>
