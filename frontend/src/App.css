@@ -93,24 +93,37 @@ body {
   background: rgba(255,255,255,0.1);
 }
 
-/* Hero Section */
+/* Engaging Hero Section */
 .hero {
-  background: linear-gradient(135deg, #4a7c59 0%, #6b8e23 100%);
-  padding: 4rem 0;
+  background: linear-gradient(135deg, #4a7c59 0%, #43ea7a 100%), url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+  padding: 5rem 0 4rem 0;
   text-align: center;
   color: white;
+  position: relative;
+  box-shadow: 0 8px 40px rgba(76, 175, 80, 0.10);
 }
-
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: linear-gradient(120deg, rgba(76,175,80,0.15) 0%, rgba(76,175,80,0.25) 100%);
+  z-index: 0;
+}
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
 .hero-content h2 {
-  font-size: 3rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
+  font-size: 3.2rem;
+  font-weight: 800;
+  margin-bottom: 1.2rem;
+  letter-spacing: -1px;
+  text-shadow: 0 2px 12px rgba(44,62,80,0.12);
 }
-
 .hero-content p {
-  font-size: 1.2rem;
-  margin-bottom: 2rem;
-  opacity: 0.9;
+  font-size: 1.3rem;
+  margin-bottom: 2.2rem;
+  opacity: 0.95;
 }
 
 .search-filter {
@@ -611,7 +624,7 @@ body {
   border-top: 2px solid #2d5a27;
 }
 
-/* Modal */
+/* Modal Improvements */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -626,24 +639,28 @@ body {
 }
 
 .modal-content {
-  background: white;
-  border-radius: 15px;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
+  border-radius: 22px;
+  box-shadow: 0 12px 48px rgba(76, 175, 80, 0.22);
+  background: #fff;
+  padding: 2.5rem 2rem;
+  max-width: 600px;
+  width: 95vw;
+  animation: fadeIn 0.5s;
 }
 
 .close-btn {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
   background: none;
   border: none;
-  font-size: 2rem;
+  color: #4a7c59;
+  font-size: 2.2rem;
+  position: absolute;
+  top: 1.2rem;
+  right: 1.5rem;
   cursor: pointer;
-  color: #666;
-  z-index: 1001;
+  transition: color 0.2s;
+}
+.close-btn:hover {
+  color: #43ea7a;
 }
 
 .plant-detail {
@@ -808,11 +825,12 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Plant Card Animation */
+/* Subtle Card Animation */
 .plant-card {
   animation: fadeIn 0.7s cubic-bezier(0.23, 1, 0.32, 1);
   box-shadow: 0 4px 20px rgba(76, 175, 80, 0.10);
   transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.3s;
+  border-radius: 18px;
 }
 
 .plant-card:hover {
@@ -827,34 +845,28 @@ body {
   animation: fadeIn 0.4s;
 }
 
-.modal-content {
-  animation: fadeIn 0.5s;
-  border-radius: 18px;
-  box-shadow: 0 8px 40px rgba(76, 175, 80, 0.18);
-}
-
-/* Button & Input Enhancements */
+/* Button Vibrancy */
 .btn, .add-to-cart-btn, .checkout-btn, .payment-btn, .auth-btn, .nav-btn {
   background: linear-gradient(90deg, #43ea7a 0%, #4a7c59 100%);
   color: #fff;
   border: none;
   border-radius: 25px;
-  padding: 0.6rem 1.4rem;
-  font-weight: 600;
-  font-size: 1rem;
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.10);
+  padding: 0.7rem 1.6rem;
+  font-weight: 700;
+  font-size: 1.08rem;
+  box-shadow: 0 2px 12px rgba(76, 175, 80, 0.13);
   transition: background 0.3s, box-shadow 0.3s, transform 0.2s;
   cursor: pointer;
   outline: none;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  letter-spacing: 0.5px;
 }
-
 .btn:hover, .add-to-cart-btn:hover, .checkout-btn:hover, .payment-btn:hover, .auth-btn:hover, .nav-btn:hover {
   background: linear-gradient(90deg, #4a7c59 0%, #43ea7a 100%);
-  box-shadow: 0 4px 16px rgba(76, 175, 80, 0.18);
-  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 6px 24px rgba(76, 175, 80, 0.18);
+  transform: translateY(-2px) scale(1.04);
 }
 
 /* Accent Color for Highlights */
@@ -910,5 +922,33 @@ body {
   
   .plants-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Modern Footer */
+.footer {
+  background: linear-gradient(90deg, #4a7c59 0%, #43ea7a 100%);
+  color: #fff;
+  text-align: center;
+  padding: 2rem 0 1rem 0;
+  font-size: 1.1rem;
+  margin-top: 3rem;
+  box-shadow: 0 -2px 16px rgba(76, 175, 80, 0.10);
+}
+.footer a {
+  color: #fff;
+  text-decoration: underline;
+  margin: 0 0.5rem;
+  transition: color 0.2s;
+}
+.footer a:hover {
+  color: #1b5e20;
+}
+
+/* Responsive Footer */
+@media (max-width: 600px) {
+  .footer {
+    font-size: 0.95rem;
+    padding: 1.2rem 0 0.7rem 0;
   }
 }

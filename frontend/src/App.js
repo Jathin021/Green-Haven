@@ -999,6 +999,14 @@ const App = () => {
           </div>
         </div>
       )}
+      {/* Footer */}
+      <footer className="footer">
+        <div>
+          &copy; {new Date().getFullYear()} Green Haven Nursery &mdash; Crafted with 🌱 by <a href="mailto:your@email.com">Jathin</a>
+          &nbsp;|&nbsp;
+          <a href="https://github.com/pjathin021" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+      </footer>
     </div>
   );
 };
