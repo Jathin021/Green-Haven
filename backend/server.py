@@ -117,6 +117,16 @@ MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["nursery_ecommerce"]
 
+# PayPal configuration
+paypalrestsdk.configure({
+    "mode": os.environ.get("PAYPAL_MODE", "sandbox"),  # sandbox or live
+    "client_id": os.environ.get("PAYPAL_CLIENT_ID"),
+    "client_secret": os.environ.get("PAYPAL_SECRET")
+})
+
+# Logging
+logging.basicConfig(level=logging.INFO)
+
 # Sample plant data
 SAMPLE_PLANTS = [
     {
