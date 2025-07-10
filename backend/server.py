@@ -252,8 +252,18 @@ async def get_plants(category: Optional[str] = None, search: Optional[str] = Non
             {"description": {"$regex": search, "$options": "i"}}
         ]
     
-    plants = await db.plants.find(query).to_list(length=None)
-    return plants
+    plants_cursor = db.plants.find(query)
+    plants = await plants_cursor.to_list(length=None)
+    
+    # Convert MongoDB documents to Pydantic models to handle ObjectId serialization
+    serialized_plants = []
+    for plant in plants:
+        # Convert _id to string if it exists
+        if "_id" in plant:
+            plant["_id"] = str(plant["_id"])
+        serialized_plants.append(plant)
+    
+    return serialized_plants
 
 @app.get("/api/plants/{plant_id}")
 async def get_plant(plant_id: str):
