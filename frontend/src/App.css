@@ -29,6 +29,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .logo {
@@ -40,7 +42,8 @@ body {
 .nav {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.8rem;
+  flex-wrap: wrap;
 }
 
 .nav-btn, .auth-btn {
@@ -52,6 +55,7 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .nav-btn:hover, .auth-btn:hover {
