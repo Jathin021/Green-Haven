@@ -68,6 +68,33 @@ class DiscountCode(BaseModel):
     active: bool
     expires_at: datetime
 
+class PayPalOrderItem(BaseModel):
+    name: str
+    quantity: int
+    unit_amount: float
+    sku: Optional[str] = None
+    
+class PayPalOrderRequest(BaseModel):
+    items: List[PayPalOrderItem]
+    total_amount: float
+    currency: str = "USD"
+    customer_email: Optional[str] = None
+    shipping_info: Optional[ShippingInfo] = None
+    discount_code: Optional[str] = None
+    
+class PayPalOrder(BaseModel):
+    id: str
+    order_id: str
+    paypal_order_id: str
+    customer_email: Optional[str]
+    total_amount: float
+    currency: str
+    status: str
+    items: List[PayPalOrderItem]
+    shipping_info: Optional[ShippingInfo] = None
+    created_at: datetime
+    updated_at: datetime
+
 # FastAPI app
 app = FastAPI()
 
