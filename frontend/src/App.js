@@ -478,7 +478,7 @@ const App = () => {
               <div className="search-filter">
                 <input
                   type="text"
-                  placeholder="Search plants..."
+                  placeholder="🔍 Search plants..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="search-input"
@@ -488,7 +488,7 @@ const App = () => {
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   className="category-select"
                 >
-                  <option value="">All Categories</option>
+                  <option value="">🌿 All Categories</option>
                   {categories.map(category => (
                     <option key={category} value={category}>
                       {category.charAt(0).toUpperCase() + category.slice(1)}
@@ -498,14 +498,14 @@ const App = () => {
                 <div className="price-filter">
                   <input
                     type="number"
-                    placeholder="Min price"
+                    placeholder="💰 Min price"
                     value={minPrice}
                     onChange={(e) => setMinPrice(e.target.value)}
                     className="price-input"
                   />
                   <input
                     type="number"
-                    placeholder="Max price"
+                    placeholder="💰 Max price"
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
                     className="price-input"
@@ -516,10 +516,10 @@ const App = () => {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="sort-select"
                 >
-                  <option value="name">Sort by Name</option>
-                  <option value="price_asc">Price: Low to High</option>
-                  <option value="price_desc">Price: High to Low</option>
-                  <option value="rating">Top Rated</option>
+                  <option value="name">📝 Sort by Name</option>
+                  <option value="price_asc">💰 Price: Low to High</option>
+                  <option value="price_desc">💰 Price: High to Low</option>
+                  <option value="rating">⭐ Top Rated</option>
                 </select>
               </div>
             </div>
@@ -529,9 +529,9 @@ const App = () => {
 
       {/* Plant Grid */}
       {!showCart && !showCheckout && !showOrders && !showProfile && !showWishlist && (
-        <section className="plants-section py-8 bg-gray-50 min-h-[60vh]">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <section className="plants-section">
+          <div className="container">
+            <div className="plants-grid">
               {filteredPlants.map(plant => (
                 <ProductCard
                   key={plant.id}
@@ -660,10 +660,12 @@ const App = () => {
       <Toast message={toast.message} type={toast.type} show={toast.show} />
       {/* Footer */}
       <footer className="footer">
-        <div>
-          &copy; {new Date().getFullYear()} Green Haven Nursery &mdash; Crafted with 🌱 by <a href="mailto:p.jathin021@gmail.com">Jathin</a>
-          &nbsp;|&nbsp;
-          <a href="https://github.com/pjathin021" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <div className="container">
+          <p>
+            &copy; {new Date().getFullYear()} Green Haven Nursery &mdash; Crafted with 🌱 by <a href="mailto:p.jathin021@gmail.com">Jathin</a>
+            &nbsp;|&nbsp;
+            <a href="https://github.com/pjathin021" target="_blank" rel="noopener noreferrer">GitHub</a>
+          </p>
         </div>
       </footer>
     </div>

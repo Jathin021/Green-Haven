@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const Header = ({
   currentUser,
@@ -18,66 +18,193 @@ const Header = ({
   fetchWishlist,
   fetchOrders,
   logout,
-  setShowAuth,
+  setShowAuth
 }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const getTotalItems = () => {
+    return cart.reduce((total, item) => total + item.quantity, 0);
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
   return (
-    <header className="bg-white shadow sticky top-0 z-30">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-green-700 flex items-center gap-2">
-          <span role="img" aria-label="logo">🌿</span> Green Haven Nursery
-        </h1>
-        <nav className="flex items-center gap-2 md:gap-4">
+    <header className="header">
+      <div className="header-content">
+        {/* Logo */}
+        <a href="#" className="logo" onClick={(e) => { e.preventDefault(); resetToShopping(); }}>
+          <span className="logo-icon">🌱</span>
+          <span>Green Haven</span>
+        </a>
+
+        {/* Mobile Menu Button */}
+        <button 
+          className="nav-btn md:hidden"
+          onClick={toggleMobileMenu}
+          aria-label="Toggle menu"
+        >
+          <span className="text-xl">☰</span>
+        </button>
+
+        {/* Desktop Navigation */}
+        <nav className={`nav-actions ${isMobileMenuOpen ? 'flex' : 'hidden md:flex'}`}>
+          {/* Shopping Cart */}
           <button
-            className={`px-3 py-2 rounded hover:bg-green-100 transition font-medium ${!showCart && !showCheckout && !showOrders && !showProfile && !showWishlist ? 'bg-green-50 text-green-700' : 'text-gray-700'}`}
-            onClick={resetToShopping}
+            className={`nav-btn ${showCart ? 'primary' : 'secondary'}`}
+            onClick={() => setShowCart(true)}
+            disabled={showCheckout || showOrders || showProfile || showWishlist}
           >
-            Plants
+            🛒 Cart
+            {getTotalItems() > 0 && (
+              <span className="badge">{getTotalItems()}</span>
+            )}
           </button>
+
+          {/* Wishlist */}
           <button
-            className={`relative px-3 py-2 rounded hover:bg-green-100 transition font-medium ${showCart ? 'bg-green-50 text-green-700' : 'text-gray-700'}`}
-            onClick={() => { setShowCart(true); setShowCheckout(false); setShowOrders(false); setShowProfile(false); setShowWishlist(false); }}
+            className={`nav-btn ${showWishlist ? 'primary' : 'secondary'}`}
+            onClick={() => {
+              setShowWishlist(true);
+              fetchWishlist();
+            }}
+            disabled={showCart || showCheckout || showOrders || showProfile}
           >
-            Cart
-            <span className="ml-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-green-600 text-white rounded-full absolute -top-2 -right-2">{cart.reduce((total, item) => total + item.quantity, 0)}</span>
+            💖 Wishlist
+            {wishlist.length > 0 && (
+              <span className="badge">{wishlist.length}</span>
+            )}
           </button>
-          {currentUser && (
+
+          {/* User Menu */}
+          {currentUser ? (
             <>
+              {/* Orders */}
               <button
-                className={`relative px-3 py-2 rounded hover:bg-green-100 transition font-medium ${showWishlist ? 'bg-green-50 text-green-700' : 'text-gray-700'}`}
-                onClick={() => { setShowWishlist(true); setShowCart(false); setShowCheckout(false); setShowOrders(false); setShowProfile(false); fetchWishlist(); }}
+                className={`nav-btn ${showOrders ? 'primary' : 'secondary'}`}
+                onClick={() => {
+                  setShowOrders(true);
+                  fetchOrders();
+                }}
+                disabled={showCart || showCheckout || showProfile || showWishlist}
               >
-                Wishlist
-                <span className="ml-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-pink-500 text-white rounded-full absolute -top-2 -right-2">{wishlist.length}</span>
+                📦 Orders
               </button>
+
+              {/* Profile */}
               <button
-                className={`px-3 py-2 rounded hover:bg-green-100 transition font-medium ${showOrders ? 'bg-green-50 text-green-700' : 'text-gray-700'}`}
-                onClick={() => { setShowOrders(true); setShowCart(false); setShowCheckout(false); setShowProfile(false); setShowWishlist(false); fetchOrders(); }}
+                className={`nav-btn ${showProfile ? 'primary' : 'secondary'}`}
+                onClick={() => setShowProfile(true)}
+                disabled={showCart || showCheckout || showOrders || showWishlist}
               >
-                Orders
+                👤 Profile
               </button>
+
+              {/* Logout */}
               <button
-                className={`px-3 py-2 rounded hover:bg-green-100 transition font-medium ${showProfile ? 'bg-green-50 text-green-700' : 'text-gray-700'}`}
-                onClick={() => { setShowProfile(true); setShowCart(false); setShowCheckout(false); setShowOrders(false); setShowWishlist(false); }}
+                className="nav-btn danger"
+                onClick={logout}
               >
-                Profile
+                🚪 Logout
               </button>
             </>
-          )}
-          {currentUser ? (
-            <div className="flex items-center gap-2 ml-4">
-              <span className="text-gray-700 font-medium">Hi, {currentUser.first_name}!</span>
-              <button onClick={logout} className="px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 transition text-sm font-semibold">Logout</button>
-            </div>
           ) : (
+            /* Login/Register */
             <button
-              className="ml-4 px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 transition font-semibold shadow"
+              className="nav-btn primary"
               onClick={() => setShowAuth(true)}
             >
-              Login
+              🔐 Login
             </button>
           )}
         </nav>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden"
+          onClick={toggleMobileMenu}
+        >
+          <div 
+            className="absolute top-16 right-4 bg-white rounded-lg shadow-lg p-4 min-w-[200px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col gap-2">
+              <button
+                className={`nav-btn ${showCart ? 'primary' : 'secondary'} w-full justify-center`}
+                onClick={() => {
+                  setShowCart(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                disabled={showCheckout || showOrders || showProfile || showWishlist}
+              >
+                🛒 Cart ({getTotalItems()})
+              </button>
+
+              <button
+                className={`nav-btn ${showWishlist ? 'primary' : 'secondary'} w-full justify-center`}
+                onClick={() => {
+                  setShowWishlist(true);
+                  fetchWishlist();
+                  setIsMobileMenuOpen(false);
+                }}
+                disabled={showCart || showCheckout || showOrders || showProfile}
+              >
+                💖 Wishlist ({wishlist.length})
+              </button>
+
+              {currentUser ? (
+                <>
+                  <button
+                    className={`nav-btn ${showOrders ? 'primary' : 'secondary'} w-full justify-center`}
+                    onClick={() => {
+                      setShowOrders(true);
+                      fetchOrders();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    disabled={showCart || showCheckout || showProfile || showWishlist}
+                  >
+                    📦 Orders
+                  </button>
+
+                  <button
+                    className={`nav-btn ${showProfile ? 'primary' : 'secondary'} w-full justify-center`}
+                    onClick={() => {
+                      setShowProfile(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    disabled={showCart || showCheckout || showOrders || showWishlist}
+                  >
+                    👤 Profile
+                  </button>
+
+                  <button
+                    className="nav-btn danger w-full justify-center"
+                    onClick={() => {
+                      logout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    🚪 Logout
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="nav-btn primary w-full justify-center"
+                  onClick={() => {
+                    setShowAuth(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  🔐 Login
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
