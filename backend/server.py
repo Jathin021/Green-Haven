@@ -585,7 +585,7 @@ async def get_plants(
             "name": [("name", 1)],
             "newest": [("created_at", -1)]
         }
-        sort_criteria = sort_options.get(sort_by, [("name", 1)])
+        sort_criteria = sort_options.get(sort_by or "name", [("name", 1)])
         
         plants_cursor = db.plants.find(query).sort(sort_criteria)
         plants = await plants_cursor.to_list(length=None)
