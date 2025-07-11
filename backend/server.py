@@ -350,85 +350,113 @@ SAMPLE_PLANTS = [
         "id": "plant_013",
         "name": "Mint Herb",
         "price": 0.89,
-        "description": "Refreshing mint plant for teas and cocktails. Fast-growing and easy to maintain.",
+        "description": "Refreshing mint plant perfect for teas, cocktails, and cooking. Fast-growing and aromatic.",
         "care_instructions": "Keep soil moist. Provide bright light. Trim regularly to prevent overgrowth.",
         "sunlight_requirements": "Bright, indirect light",
         "category": "herb",
         "stock_quantity": 55,
-        "image_url": "https://images.unsplash.com/photo-1618377382884-c6c0a6c0c0c0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHw3fHxtaW50fGVufDB8fHx8MTc1MjE3MDA3OHww&ixlib=rb-4.1.0&q=85",
-        "weight": 0.7,
-        "average_rating": 4.7,
-        "total_reviews": 35
+        "image_url": "https://images.unsplash.com/photo-1628557045163-1a8b9d3b8b8b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHw3fHxtaW50fGVufDB8fHx8MTc1MjE3MDA3OHww&ixlib=rb-4.1.0&q=85",
+        "weight": 0.6,
+        "average_rating": 4.9,
+        "total_reviews": 38
     },
     {
         "id": "plant_014",
         "name": "Rosemary Herb",
         "price": 1.19,
-        "description": "Aromatic rosemary plant for cooking and fragrance. Drought-tolerant and easy to grow.",
-        "care_instructions": "Water when soil is dry. Provide bright light. Trim to maintain shape.",
+        "description": "Aromatic rosemary plant perfect for Mediterranean cooking. Beautiful and fragrant.",
+        "care_instructions": "Water when soil is dry. Provide bright light. Prune regularly for bushier growth.",
         "sunlight_requirements": "Bright, direct light",
         "category": "herb",
-        "stock_quantity": 40,
-        "image_url": "https://images.unsplash.com/photo-1618377382884-c6c0a6c0c0c0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHw4fHxyb3NlbWFyeXxlbnwwfHx8fDE3NTIxNzAwNzh8MA&ixlib=rb-4.1.0&q=85",
-        "weight": 1.0,
-        "average_rating": 4.6,
-        "total_reviews": 23
+        "stock_quantity": 42,
+        "image_url": "https://images.unsplash.com/photo-1628557045163-1a8b9d3b8b8b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHw4fHxyb3NlbWFyeXxlbnwwfHx8fDE3NTIxNzAwNzh8MA&ixlib=rb-4.1.0&q=85",
+        "weight": 0.9,
+        "average_rating": 4.7,
+        "total_reviews": 29
     },
     {
         "id": "plant_015",
-        "name": "Cactus Mix",
-        "price": 1.39,
-        "description": "Assorted small cacti in decorative pots. Perfect for desks and windowsills.",
-        "care_instructions": "Water sparingly, every 3-4 weeks. Provide bright light. Avoid overwatering.",
-        "sunlight_requirements": "Bright, direct light",
-        "category": "succulent",
-        "stock_quantity": 60,
-        "image_url": "https://images.unsplash.com/photo-1470171/pexels-photo-1470171.jpeg",
+        "name": "Lavender",
+        "price": 1.69,
+        "description": "Beautiful purple flowering plant with calming fragrance. Perfect for gardens and aromatherapy.",
+        "care_instructions": "Water sparingly. Provide full sun. Well-draining soil is essential.",
+        "sunlight_requirements": "Full sun",
+        "category": "flowering",
+        "stock_quantity": 28,
+        "image_url": "https://images.unsplash.com/photo-1628557045163-1a8b9d3b8b8b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHw5fHxsYXZlbmRlcnxlbnwwfHx8fDE3NTIxNzAwNzh8MA&ixlib=rb-4.1.0&q=85",
         "weight": 1.5,
-        "average_rating": 4.4,
-        "total_reviews": 31
+        "average_rating": 4.6,
+        "total_reviews": 33
     },
     {
         "id": "plant_016",
-        "name": "Lucky Bamboo",
-        "price": 1.69,
-        "description": "Traditional lucky bamboo plant. Brings good fortune and requires minimal care.",
-        "care_instructions": "Keep in water or moist soil. Provide indirect light. Change water weekly.",
-        "sunlight_requirements": "Low to bright, indirect light",
-        "category": "houseplant",
-        "stock_quantity": 35,
-        "image_url": "https://images.unsplash.com/photo-1593691509543-c55fb32e5cee?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHw5fHxiYW1ib298ZW58MHx8fHwxNzUyMTcwMDc4fDA&ixlib=rb-4.1.0&q=85",
-        "weight": 1.3,
-        "average_rating": 4.3,
-        "total_reviews": 18
+        "name": "Orchid",
+        "price": 3.49,
+        "description": "Elegant flowering orchid with stunning blooms. Perfect for adding sophistication to any space.",
+        "care_instructions": "Water weekly. Provide bright, indirect light. Use orchid-specific potting mix.",
+        "sunlight_requirements": "Bright, indirect light",
+        "category": "flowering",
+        "stock_quantity": 12,
+        "image_url": "https://images.unsplash.com/photo-1628557045163-1a8b9d3b8b8b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxMHx8b3JjaGlkfGVufDB8fHx8MTc1MjE3MDA3OHww&ixlib=rb-4.1.0&q=85",
+        "weight": 2.2,
+        "average_rating": 4.4,
+        "total_reviews": 17
     },
     {
         "id": "plant_017",
-        "name": "English Ivy",
-        "price": 1.29,
-        "description": "Classic trailing ivy plant. Perfect for hanging baskets and climbing walls.",
-        "care_instructions": "Keep soil moist. Provide bright, indirect light. Trim to control growth.",
-        "sunlight_requirements": "Bright, indirect light",
-        "category": "houseplant",
-        "stock_quantity": 42,
-        "image_url": "https://images.unsplash.com/photo-1593691509543-c55fb32e5cee?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxMHx8aXZ5fGVufDB8fHx8MTc1MjE3MDA3OHww&ixlib=rb-4.1.0&q=85",
-        "weight": 1.1,
-        "average_rating": 4.2,
-        "total_reviews": 14
+        "name": "Cactus Collection",
+        "price": 2.39,
+        "description": "Diverse collection of cacti in decorative pots. Perfect for desert-themed decor.",
+        "care_instructions": "Water monthly. Provide bright light. Excellent for forgetful gardeners.",
+        "sunlight_requirements": "Bright, direct light",
+        "category": "succulent",
+        "stock_quantity": 35,
+        "image_url": "https://images.unsplash.com/photo-1628557045163-1a8b9d3b8b8b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxMXx8Y2FjdHVzfGVufDB8fHx8MTc1MjE3MDA3OHww&ixlib=rb-4.1.0&q=85",
+        "weight": 1.8,
+        "average_rating": 4.8,
+        "total_reviews": 24
     },
     {
         "id": "plant_018",
-        "name": "Parlor Palm",
-        "price": 2.19,
-        "description": "Elegant palm plant perfect for indoor spaces. Adds tropical feel to any room.",
-        "care_instructions": "Water when top inch of soil is dry. Provide bright, indirect light. Mist occasionally.",
+        "name": "Bamboo Palm",
+        "price": 2.99,
+        "description": "Tropical palm with graceful fronds. Great for adding a touch of the tropics indoors.",
+        "care_instructions": "Keep soil moist. Provide bright, indirect light. Mist regularly for humidity.",
         "sunlight_requirements": "Bright, indirect light",
         "category": "houseplant",
-        "stock_quantity": 28,
-        "image_url": "https://images.unsplash.com/photo-1593691509543-c55fb32e5cee?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxMXx8cGFsbXxlbnwwfHx8fDE3NTIxNzAwNzh8MA&ixlib=rb-4.1.0&q=85",
-        "weight": 2.8,
+        "stock_quantity": 20,
+        "image_url": "https://images.unsplash.com/photo-1628557045163-1a8b9d3b8b8b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxMnx8YmFtYm9vfGVufDB8fHx8MTc1MjE3MDA3OHww&ixlib=rb-4.1.0&q=85",
+        "weight": 3.2,
+        "average_rating": 4.3,
+        "total_reviews": 14
+    },
+    {
+        "id": "plant_019",
+        "name": "English Ivy",
+        "price": 1.99,
+        "description": "Classic trailing vine with beautiful variegated leaves. Perfect for hanging baskets.",
+        "care_instructions": "Water when soil is dry. Provide bright, indirect light. Trim to control growth.",
+        "sunlight_requirements": "Bright, indirect light",
+        "category": "houseplant",
+        "stock_quantity": 40,
+        "image_url": "https://images.unsplash.com/photo-1628557045163-1a8b9d3b8b8b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxM3x8aXZ5fGVufDB8fHx8MTc1MjE3MDA3OHww&ixlib=rb-4.1.0&q=85",
+        "weight": 1.4,
         "average_rating": 4.5,
-        "total_reviews": 20
+        "total_reviews": 21
+    },
+    {
+        "id": "plant_020",
+        "name": "Chinese Evergreen",
+        "price": 2.19,
+        "description": "Stunning variegated leaves with beautiful patterns. Very low maintenance and air-purifying.",
+        "care_instructions": "Water when top inch of soil is dry. Tolerates low light. Wipe leaves occasionally.",
+        "sunlight_requirements": "Low to bright, indirect light",
+        "category": "houseplant",
+        "stock_quantity": 33,
+        "image_url": "https://images.unsplash.com/photo-1628557045163-1a8b9d3b8b8b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxNHx8ZXZlcmdyZWVufGVufDB8fHx8MTc1MjE3MDA3OHww&ixlib=rb-4.1.0&q=85",
+        "weight": 2.3,
+        "average_rating": 4.7,
+        "total_reviews": 26
     }
 ]
 
@@ -477,23 +505,31 @@ SAMPLE_REVIEWS = [
 # Initialize database
 @app.on_event("startup")
 async def startup_event():
-    # Check if plants collection exists and initialize with sample data
-    plants_count = await db.plants.count_documents({})
-    if plants_count == 0:
-        await db.plants.insert_many(SAMPLE_PLANTS)
-        print("Sample plants added to database")
-    
-    # Check if discount codes exist and initialize
-    discount_count = await db.discount_codes.count_documents({})
-    if discount_count == 0:
-        await db.discount_codes.insert_many(SAMPLE_DISCOUNT_CODES)
-        print("Sample discount codes added to database")
-    
-    # Check if reviews exist and initialize
-    reviews_count = await db.reviews.count_documents({})
-    if reviews_count == 0:
-        await db.reviews.insert_many(SAMPLE_REVIEWS)
-        print("Sample reviews added to database")
+    try:
+        # Check if plants collection exists and initialize with sample data
+        plants_count = await db.plants.count_documents({})
+        if plants_count == 0:
+            await db.plants.insert_many(SAMPLE_PLANTS)
+            print(f"✅ {len(SAMPLE_PLANTS)} sample plants added to database")
+        else:
+            print(f"✅ Database already contains {plants_count} plants")
+        
+        # Check if discount codes exist and initialize
+        discount_count = await db.discount_codes.count_documents({})
+        if discount_count == 0:
+            await db.discount_codes.insert_many(SAMPLE_DISCOUNT_CODES)
+            print(f"✅ {len(SAMPLE_DISCOUNT_CODES)} sample discount codes added to database")
+        
+        # Check if reviews exist and initialize
+        reviews_count = await db.reviews.count_documents({})
+        if reviews_count == 0:
+            await db.reviews.insert_many(SAMPLE_REVIEWS)
+            print(f"✅ {len(SAMPLE_REVIEWS)} sample reviews added to database")
+        
+        print("🚀 Green Haven Nursery API is ready!")
+    except Exception as e:
+        print(f"❌ Error during startup: {str(e)}")
+        raise e
 
 # Utility functions
 def create_access_token(data: dict):
@@ -524,44 +560,49 @@ async def get_plants(
     max_price: Optional[float] = None,
     sort_by: Optional[str] = None  # price_asc, price_desc, rating, name
 ):
-    query = {}
-    if category:
-        query["category"] = category
-    if search:
-        query["$or"] = [
-            {"name": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}}
-        ]
-    if min_price is not None or max_price is not None:
-        price_query = {}
-        if min_price is not None:
-            price_query["$gte"] = min_price
-        if max_price is not None:
-            price_query["$lte"] = max_price
-        query["price"] = price_query
-    
-    # Sorting
-    sort_options = {
-        "price_asc": [("price", 1)],
-        "price_desc": [("price", -1)],
-        "rating": [("average_rating", -1)],
-        "name": [("name", 1)],
-        "newest": [("created_at", -1)]
-    }
-    sort_criteria = sort_options.get(sort_by, [("name", 1)])
-    
-    plants_cursor = db.plants.find(query).sort(sort_criteria)
-    plants = await plants_cursor.to_list(length=None)
-    
-    # Convert MongoDB documents to Pydantic models to handle ObjectId serialization
-    serialized_plants = []
-    for plant in plants:
-        # Convert _id to string if it exists
-        if "_id" in plant:
-            plant["_id"] = str(plant["_id"])
-        serialized_plants.append(plant)
-    
-    return serialized_plants
+    try:
+        query = {}
+        if category:
+            query["category"] = category
+        if search:
+            query["$or"] = [
+                {"name": {"$regex": search, "$options": "i"}},
+                {"description": {"$regex": search, "$options": "i"}}
+            ]
+        if min_price is not None or max_price is not None:
+            price_query = {}
+            if min_price is not None:
+                price_query["$gte"] = min_price
+            if max_price is not None:
+                price_query["$lte"] = max_price
+            query["price"] = price_query
+        
+        # Sorting
+        sort_options = {
+            "price_asc": [("price", 1)],
+            "price_desc": [("price", -1)],
+            "rating": [("average_rating", -1)],
+            "name": [("name", 1)],
+            "newest": [("created_at", -1)]
+        }
+        sort_criteria = sort_options.get(sort_by, [("name", 1)])
+        
+        plants_cursor = db.plants.find(query).sort(sort_criteria)
+        plants = await plants_cursor.to_list(length=None)
+        
+        # Convert MongoDB documents to Pydantic models to handle ObjectId serialization
+        serialized_plants = []
+        for plant in plants:
+            # Convert _id to string if it exists
+            if "_id" in plant:
+                plant["_id"] = str(plant["_id"])
+            serialized_plants.append(plant)
+        
+        logging.info(f"Retrieved {len(serialized_plants)} plants from database")
+        return serialized_plants
+    except Exception as e:
+        logging.error(f"Error fetching plants: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching plants. Please try again.")
 
 @app.get("/api/plants/{plant_id}")
 async def get_plant(plant_id: str):
@@ -1288,7 +1329,28 @@ async def logout(current_user: dict = Depends(verify_token)):
 
 @app.get("/")
 def root():
-    return {"message": "Green Haven Nursery API is running!"}
+    return {
+        "message": "🌱 Green Haven Nursery API",
+        "version": "1.0.0",
+        "status": "running",
+        "endpoints": {
+            "plants": "/api/plants",
+            "categories": "/api/categories",
+            "auth": "/api/register, /api/login",
+            "cart": "/api/calculate-total",
+            "orders": "/api/orders",
+            "wishlist": "/api/wishlist",
+            "reviews": "/api/plants/{plant_id}/reviews"
+        }
+    }
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "service": "Green Haven Nursery API"
+    }
 
 if __name__ == "__main__":
     import uvicorn
