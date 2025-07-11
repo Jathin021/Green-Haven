@@ -12,6 +12,7 @@ from passlib.context import CryptContext
 import paypalrestsdk
 from paypalrestsdk import Payment, BillingPlan, BillingAgreement
 import logging
+import re
 
 # Models
 class Plant(BaseModel):
@@ -442,66 +443,134 @@ async def get_categories():
 # User authentication endpoints
 @app.post("/api/register")
 async def register(user_data: UserRegister):
-    # Check if user already exists
-    existing_user = await db.users.find_one({"email": user_data.email})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    # Enhanced validation
+    if not user_data.email or not user_data.email.strip():
+        raise HTTPException(status_code=400, detail="Email is required")
     
-    # Create new user
+    # Email format validation
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_pattern, user_data.email):
+        raise HTTPException(status_code=400, detail="Please enter a valid email address")
+    
+    # Password strength validation
+    if len(user_data.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+    
+    # Name validation
+    if not user_data.first_name or not user_data.first_name.strip():
+        raise HTTPException(status_code=400, detail="First name is required")
+    if not user_data.last_name or not user_data.last_name.strip():
+        raise HTTPException(status_code=400, detail="Last name is required")
+    
+    # Check if user already exists
+    existing_user = await db.users.find_one({"email": user_data.email.lower().strip()})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="An account with this email already exists")
+    
+    # Create new user with enhanced data
     user_id = str(uuid.uuid4())
     hashed_password = hash_password(user_data.password)
     
     user = {
         "id": user_id,
-        "email": user_data.email,
+        "email": user_data.email.lower().strip(),
         "password_hash": hashed_password,
-        "first_name": user_data.first_name,
-        "last_name": user_data.last_name,
-        "phone": user_data.phone,
-        "created_at": datetime.utcnow()
+        "first_name": user_data.first_name.strip(),
+        "last_name": user_data.last_name.strip(),
+        "phone": user_data.phone.strip() if user_data.phone else None,
+        "created_at": datetime.utcnow(),
+        "last_login": datetime.utcnow(),
+        "is_active": True,
+        "email_verified": False,  # For future email verification
+        "profile_complete": False  # Track if user has completed profile
     }
     
-    await db.users.insert_one(user)
-    
-    # Create access token
-    access_token = create_access_token({"user_id": user_id, "email": user_data.email})
-    
-    return {
-        "access_token": access_token,
-        "user": {
-            "id": user_id,
-            "email": user_data.email,
-            "first_name": user_data.first_name,
-            "last_name": user_data.last_name,
-            "phone": user_data.phone
+    try:
+        await db.users.insert_one(user)
+        
+        # Create access token
+        access_token = create_access_token({"user_id": user_id, "email": user["email"]})
+        
+        # Log successful registration
+        logging.info(f"New user registered: {user['email']}")
+        
+        return {
+            "access_token": access_token,
+            "user": {
+                "id": user_id,
+                "email": user["email"],
+                "first_name": user["first_name"],
+                "last_name": user["last_name"],
+                "phone": user["phone"],
+                "created_at": user["created_at"]
+            },
+            "message": "Account created successfully! Welcome to Green Haven Nursery."
         }
-    }
+    except Exception as e:
+        logging.error(f"Error creating user: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error creating account. Please try again.")
 
 @app.post("/api/login")
 async def login(user_data: UserLogin):
-    # Find user by email
-    user = await db.users.find_one({"email": user_data.email})
-    if not user or not verify_password(user_data.password, user["password_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+    # Enhanced validation
+    if not user_data.email or not user_data.email.strip():
+        raise HTTPException(status_code=400, detail="Email is required")
+    if not user_data.password:
+        raise HTTPException(status_code=400, detail="Password is required")
     
-    # Create access token
-    access_token = create_access_token({"user_id": user["id"], "email": user["email"]})
-    
-    return {
-        "access_token": access_token,
-        "user": {
-            "id": user["id"],
-            "email": user["email"],
-            "first_name": user["first_name"],
-            "last_name": user["last_name"],
-            "phone": user.get("phone"),
-            "address": user.get("address"),
-            "city": user.get("city"),
-            "state": user.get("state"),
-            "zip_code": user.get("zip_code"),
-            "country": user.get("country", "US")
+    try:
+        # Find user by email (case-insensitive)
+        user = await db.users.find_one({"email": user_data.email.lower().strip()})
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        # Check if account is active
+        if not user.get("is_active", True):
+            raise HTTPException(status_code=401, detail="Account is deactivated. Please contact support.")
+        
+        # Verify password
+        if not verify_password(user_data.password, user["password_hash"]):
+            # Log failed login attempt
+            logging.warning(f"Failed login attempt for email: {user_data.email}")
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        # Update last login
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$set": {"last_login": datetime.utcnow()}}
+        )
+        
+        # Create access token
+        access_token = create_access_token({"user_id": user["id"], "email": user["email"]})
+        
+        # Log successful login
+        logging.info(f"User logged in: {user['email']}")
+        
+        return {
+            "access_token": access_token,
+            "user": {
+                "id": user["id"],
+                "email": user["email"],
+                "first_name": user["first_name"],
+                "last_name": user["last_name"],
+                "phone": user.get("phone"),
+                "address": user.get("address"),
+                "city": user.get("city"),
+                "state": user.get("state"),
+                "zip_code": user.get("zip_code"),
+                "country": user.get("country", "US"),
+                "created_at": user["created_at"],
+                "last_login": user.get("last_login"),
+                "profile_complete": user.get("profile_complete", False)
+            },
+            "message": f"Welcome back, {user['first_name']}!"
         }
-    }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error during login: {str(e)}")
+        raise HTTPException(status_code=500, detail="Login failed. Please try again.")
 
 # User profile endpoints
 @app.get("/api/profile")
@@ -974,6 +1043,108 @@ async def reset_plants(request: Request):
     await db.plants.delete_many({})
     await db.plants.insert_many(SAMPLE_PLANTS)
     return {"message": "Plants collection reset and re-initialized with sample data."}
+
+# Additional user management endpoints
+@app.post("/api/forgot-password")
+async def forgot_password(email: str):
+    """Request password reset (placeholder for email functionality)"""
+    if not email or not email.strip():
+        raise HTTPException(status_code=400, detail="Email is required")
+    
+    user = await db.users.find_one({"email": email.lower().strip()})
+    if not user:
+        # Don't reveal if email exists or not for security
+        return {"message": "If an account with this email exists, a password reset link has been sent."}
+    
+    # In a real implementation, you would:
+    # 1. Generate a secure reset token
+    # 2. Store it in database with expiration
+    # 3. Send email with reset link
+    
+    logging.info(f"Password reset requested for: {email}")
+    return {"message": "If an account with this email exists, a password reset link has been sent."}
+
+@app.post("/api/change-password")
+async def change_password(
+    current_password: str,
+    new_password: str,
+    current_user: dict = Depends(verify_token)
+):
+    """Change user password"""
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters long")
+    
+    user = await db.users.find_one({"id": current_user["user_id"]})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Verify current password
+    if not verify_password(current_password, user["password_hash"]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    # Hash new password
+    new_password_hash = hash_password(new_password)
+    
+    # Update password
+    await db.users.update_one(
+        {"id": current_user["user_id"]},
+        {"$set": {"password_hash": new_password_hash}}
+    )
+    
+    logging.info(f"Password changed for user: {user['email']}")
+    return {"message": "Password changed successfully"}
+
+@app.get("/api/user/stats")
+async def get_user_stats(current_user: dict = Depends(verify_token)):
+    """Get user statistics (orders, reviews, etc.)"""
+    user_id = current_user["user_id"]
+    
+    # Count orders
+    order_count = await db.orders.count_documents({"user_id": user_id})
+    
+    # Count reviews
+    review_count = await db.reviews.count_documents({"user_id": user_id})
+    
+    # Count wishlist items
+    wishlist_count = await db.wishlist.count_documents({"user_id": user_id})
+    
+    # Get total spent
+    orders = await db.orders.find({"user_id": user_id, "status": "COMPLETED"}).to_list(length=None)
+    total_spent = sum(order.get("total_amount", 0) for order in orders)
+    
+    return {
+        "order_count": order_count,
+        "review_count": review_count,
+        "wishlist_count": wishlist_count,
+        "total_spent": round(total_spent, 2),
+        "member_since": current_user.get("created_at")
+    }
+
+@app.delete("/api/user/deactivate")
+async def deactivate_account(current_user: dict = Depends(verify_token)):
+    """Deactivate user account"""
+    user = await db.users.find_one({"id": current_user["user_id"]})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Soft delete - mark as inactive
+    await db.users.update_one(
+        {"id": current_user["user_id"]},
+        {"$set": {"is_active": False, "deactivated_at": datetime.utcnow()}}
+    )
+    
+    logging.info(f"Account deactivated for user: {user['email']}")
+    return {"message": "Account deactivated successfully"}
+
+@app.post("/api/logout")
+async def logout(current_user: dict = Depends(verify_token)):
+    """Logout user (invalidate token on frontend)"""
+    # In a real implementation, you might want to:
+    # 1. Add token to blacklist
+    # 2. Update last logout time
+    
+    logging.info(f"User logged out: {current_user['email']}")
+    return {"message": "Logged out successfully"}
 
 @app.get("/")
 def root():

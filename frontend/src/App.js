@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import PayPalCheckout from './PayPalCheckout';
 import './App.css';
+import Header from './components/Header';
+import ProductCard from './components/ProductCard';
+import CartModal from './components/CartModal';
+import CheckoutModal from './components/CheckoutModal';
+import WishlistModal from './components/WishlistModal';
+import OrdersModal from './components/OrdersModal';
+import ProfileModal from './components/ProfileModal';
+import ReviewsSection from './components/ReviewsSection';
+import AuthModal from './components/AuthModal';
+import Toast from './components/Toast';
 
 const App = () => {
   const [plants, setPlants] = useState([]);
@@ -36,6 +46,7 @@ const App = () => {
     zip_code: '',
     country: 'US'
   });
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
@@ -144,8 +155,10 @@ const App = () => {
           ? { ...item, quantity: item.quantity + 1 }
           : item
       ));
+      showToast('Increased quantity in cart!');
     } else {
       setCart([...cart, { ...plant, quantity: 1 }]);
+      showToast('Added to cart!');
     }
   };
 
@@ -231,20 +244,38 @@ const App = () => {
         body: JSON.stringify(formData),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         setCurrentUser(data.user);
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('token', data.access_token);
         setShowAuth(false);
         fetchWishlist();
+        
+        // Show success message
+        showToast(data.message || (authMode === 'login' ? 'Welcome back!' : 'Account created successfully!'));
+        
+        // If it's a new user, show a welcome message
+        if (authMode === 'register') {
+          showToast('Welcome to Green Haven Nursery! 🎉', 'success');
+        }
       } else {
-        const error = await response.json();
-        alert(error.detail || 'Authentication failed');
+        // Handle specific error messages from backend
+        const errorMessage = data.detail || 'Authentication failed';
+        showToast(errorMessage, 'error');
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Auth error:', error);
-      alert('Authentication failed');
+      
+      // Handle network errors
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        showToast('Network error. Please check your connection.', 'error');
+      } else {
+        showToast(error.message || 'Authentication failed. Please try again.', 'error');
+      }
+      throw error;
     }
   };
 
@@ -355,11 +386,13 @@ const App = () => {
     setOrderDetails(paymentResult);
     setCart([]); // Clear cart
     setShowCheckout(false);
+    showToast(`Payment successful! Order ID: ${paymentResult.order_id}`);
     alert(`Payment successful! Order ID: ${paymentResult.order_id}`);
   };
 
   const handlePaymentError = (error) => {
     console.error('Payment error:', error);
+    showToast('Payment failed. Please try again.', 'error');
     alert('Payment failed. Please try again.');
   };
 
@@ -406,65 +439,34 @@ const App = () => {
 
   const filteredPlants = filterPlants();
 
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type }), 2500);
+  };
+
   return (
     <div className="app">
       {/* Header */}
-      <header className="header">
-        <div className="container">
-          <div className="header-content">
-            <h1 className="logo">🌿 Green Haven Nursery</h1>
-            <nav className="nav">
-              <button 
-                className={`nav-btn ${!showCart && !showCheckout && !showOrders && !showProfile && !showWishlist ? 'active' : ''}`}
-                onClick={resetToShopping}
-              >
-                Plants
-              </button>
-              <button 
-                className={`nav-btn cart-btn ${showCart ? 'active' : ''}`}
-                onClick={() => { setShowCart(true); setShowCheckout(false); setShowOrders(false); setShowProfile(false); setShowWishlist(false); }}
-              >
-                Cart ({getTotalItems()})
-              </button>
-              {currentUser && (
-                <>
-                  <button 
-                    className={`nav-btn ${showWishlist ? 'active' : ''}`}
-                    onClick={() => { setShowWishlist(true); setShowCart(false); setShowCheckout(false); setShowOrders(false); setShowProfile(false); fetchWishlist(); }}
-                  >
-                    Wishlist ({wishlist.length})
-                  </button>
-                  <button 
-                    className={`nav-btn ${showOrders ? 'active' : ''}`}
-                    onClick={() => { setShowOrders(true); setShowCart(false); setShowCheckout(false); setShowProfile(false); setShowWishlist(false); fetchOrders(); }}
-                  >
-                    Orders
-                  </button>
-                  <button 
-                    className={`nav-btn ${showProfile ? 'active' : ''}`}
-                    onClick={() => { setShowProfile(true); setShowCart(false); setShowCheckout(false); setShowOrders(false); setShowWishlist(false); }}
-                  >
-                    Profile
-                  </button>
-                </>
-              )}
-              {currentUser ? (
-                <div className="user-menu">
-                  <span>Hi, {currentUser.first_name}!</span>
-                  <button onClick={logout} className="logout-btn">Logout</button>
-                </div>
-              ) : (
-                <button 
-                  className="auth-btn"
-                  onClick={() => setShowAuth(true)}
-                >
-                  Login
-                </button>
-              )}
-            </nav>
-          </div>
-        </div>
-      </header>
+      <Header
+        currentUser={currentUser}
+        showCart={showCart}
+        showCheckout={showCheckout}
+        showOrders={showOrders}
+        showProfile={showProfile}
+        showWishlist={showWishlist}
+        wishlist={wishlist}
+        cart={cart}
+        resetToShopping={resetToShopping}
+        setShowCart={setShowCart}
+        setShowCheckout={setShowCheckout}
+        setShowOrders={setShowOrders}
+        setShowProfile={setShowProfile}
+        setShowWishlist={setShowWishlist}
+        fetchWishlist={fetchWishlist}
+        fetchOrders={fetchOrders}
+        logout={logout}
+        setShowAuth={setShowAuth}
+      />
 
       {/* Hero Section */}
       {!showCart && !showCheckout && !showOrders && !showProfile && !showWishlist && (
@@ -527,45 +529,19 @@ const App = () => {
 
       {/* Plant Grid */}
       {!showCart && !showCheckout && !showOrders && !showProfile && !showWishlist && (
-        <section className="plants-section">
-          <div className="container">
-            <div className="plants-grid">
+        <section className="plants-section py-8 bg-gray-50 min-h-[60vh]">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {filteredPlants.map(plant => (
-                <div key={plant.id} className="plant-card">
-                  <div className="plant-image">
-                    <img src={plant.image_url} alt={plant.name} />
-                    <div className="plant-overlay">
-                      <button 
-                        className="overlay-btn view-btn"
-                        onClick={() => showPlantDetails(plant)}
-                      >
-                        View Details
-                      </button>
-                      <button 
-                        className="overlay-btn add-btn"
-                        onClick={() => addToCart(plant)}
-                      >
-                        Add to Cart
-                      </button>
-                      <button 
-                        className={`overlay-btn wishlist-btn ${isInWishlist(plant.id) ? 'in-wishlist' : ''}`}
-                        onClick={() => isInWishlist(plant.id) ? removeFromWishlist(plant.id) : addToWishlist(plant)}
-                      >
-                        {isInWishlist(plant.id) ? '💖' : '🤍'}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="plant-info">
-                    <h3>{plant.name}</h3>
-                    <div className="plant-rating">
-                      {renderStars(plant.average_rating)}
-                      <span className="rating-count">({plant.total_reviews})</span>
-                    </div>
-                    <p className="plant-price">${plant.price}</p>
-                    <p className="plant-category">{plant.category}</p>
-                    <p className="plant-description">{plant.description.substring(0, 100)}...</p>
-                  </div>
-                </div>
+                <ProductCard
+                  key={plant.id}
+                  plant={plant}
+                  onViewDetails={showPlantDetails}
+                  onAddToCart={addToCart}
+                  onToggleWishlist={isInWishlist(plant.id) ? removeFromWishlist : addToWishlist}
+                  isInWishlist={isInWishlist}
+                  renderStars={renderStars}
+                />
               ))}
             </div>
           </div>
@@ -608,401 +584,84 @@ const App = () => {
                 </div>
               </div>
             </div>
-            
             {/* Reviews Section */}
-            <div className="reviews-section">
-              <h3>Customer Reviews</h3>
-              
-              {/* Add Review Form */}
-              {currentUser && (
-                <div className="review-form">
-                  <h4>Write a Review</h4>
-                  <div className="rating-input">
-                    <label>Rating:</label>
-                    <select 
-                      value={reviewForm.rating} 
-                      onChange={(e) => setReviewForm({...reviewForm, rating: parseInt(e.target.value)})}
-                    >
-                      {[5,4,3,2,1].map(num => (
-                        <option key={num} value={num}>{num} Star{num > 1 ? 's' : ''}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <textarea
-                    value={reviewForm.comment}
-                    onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})}
-                    placeholder="Share your experience with this plant..."
-                    className="review-textarea"
-                  />
-                  <button 
-                    className="btn btn-primary"
-                    onClick={() => submitReview(selectedPlant.id)}
-                  >
-                    Submit Review
-                  </button>
-                </div>
-              )}
-              
-              {/* Reviews List */}
-              <div className="reviews-list">
-                {reviews.map(review => (
-                  <div key={review.id} className="review-item">
-                    <div className="review-header">
-                      <strong>{review.user_name}</strong>
-                      <div className="review-rating">
-                        {renderStars(review.rating)}
-                      </div>
-                      <span className="review-date">
-                        {new Date(review.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="review-comment">{review.comment}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ReviewsSection
+              reviews={reviews}
+              currentUser={currentUser}
+              reviewForm={reviewForm}
+              setReviewForm={setReviewForm}
+              submitReview={submitReview}
+              selectedPlant={selectedPlant}
+              renderStars={renderStars}
+            />
           </div>
         </div>
       )}
 
       {/* Cart Modal */}
-      {showCart && (
-        <div className="modal-overlay" onClick={() => setShowCart(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setShowCart(false)}>×</button>
-            <h2>Shopping Cart</h2>
-            {cart.length === 0 ? (
-              <p>Your cart is empty</p>
-            ) : (
-              <div className="cart-items">
-                {cart.map(item => (
-                  <div key={item.id} className="cart-item">
-                    <img src={item.image_url} alt={item.name} className="cart-item-image" />
-                    <div className="cart-item-info">
-                      <h4>{item.name}</h4>
-                      <p>${item.price}</p>
-                      <div className="quantity-controls">
-                        <button onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</button>
-                        <span>{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
-                      </div>
-                    </div>
-                    <button 
-                      className="remove-btn"
-                      onClick={() => removeFromCart(item.id)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-                <div className="cart-total">
-                  <h3>Subtotal: ${getSubtotal().toFixed(2)}</h3>
-                  <button 
-                    className="checkout-btn"
-                    onClick={() => {
-                      setShowCart(false);
-                      setShowCheckout(true);
-                    }}
-                  >
-                    Proceed to Checkout
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <CartModal
+        cart={cart}
+        show={showCart}
+        onClose={() => setShowCart(false)}
+        updateQuantity={updateQuantity}
+        removeFromCart={removeFromCart}
+        getSubtotal={getSubtotal}
+        onCheckout={() => {
+          setShowCart(false);
+          setShowCheckout(true);
+        }}
+      />
+      {/* Checkout Modal */}
+      <CheckoutModal
+        show={showCheckout}
+        onClose={() => setShowCheckout(false)}
+        cart={cart}
+        shippingInfo={shippingInfo}
+        setShippingInfo={setShippingInfo}
+        discountCode={discountCode}
+        setDiscountCode={setDiscountCode}
+        validateDiscountCode={validateDiscountCode}
+        orderTotal={orderTotal}
+        handlePaymentSuccess={handlePaymentSuccess}
+        handlePaymentError={handlePaymentError}
+      />
 
       {/* Wishlist Modal */}
-      {showWishlist && (
-        <div className="modal-overlay" onClick={() => setShowWishlist(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setShowWishlist(false)}>×</button>
-            <h2>My Wishlist</h2>
-            {wishlist.length === 0 ? (
-              <p>Your wishlist is empty</p>
-            ) : (
-              <div className="wishlist-items">
-                {wishlist.map(item => (
-                  <div key={item.id} className="wishlist-item">
-                    <img src={item.image_url} alt={item.name} className="wishlist-item-image" />
-                    <div className="wishlist-item-info">
-                      <h4>{item.name}</h4>
-                      <p>${item.price}</p>
-                      <div className="wishlist-actions">
-                        <button 
-                          className="btn btn-primary"
-                          onClick={() => addToCart(item)}
-                        >
-                          Add to Cart
-                        </button>
-                        <button 
-                          className="btn btn-secondary"
-                          onClick={() => removeFromWishlist(item.id)}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
+      <WishlistModal
+        show={showWishlist}
+        onClose={() => setShowWishlist(false)}
+        wishlist={wishlist}
+        addToCart={addToCart}
+        removeFromWishlist={removeFromWishlist}
+      />
       {/* Orders Modal */}
-      {showOrders && (
-        <div className="modal-overlay" onClick={() => setShowOrders(false)}>
-          <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setShowOrders(false)}>×</button>
-            <h2>My Orders</h2>
-            {orders.length === 0 ? (
-              <p>No orders found</p>
-            ) : (
-              <div className="orders-list">
-                {orders.map(order => (
-                  <div key={order.order_id} className="order-item">
-                    <div className="order-header">
-                      <h4>Order #{order.order_id.substring(0, 8)}</h4>
-                      <span className={`order-status ${order.order_status}`}>
-                        {order.order_status.charAt(0).toUpperCase() + order.order_status.slice(1)}
-                      </span>
-                    </div>
-                    <div className="order-details">
-                      <p><strong>Date:</strong> {new Date(order.created_at).toLocaleDateString()}</p>
-                      <p><strong>Total:</strong> ${order.total_amount}</p>
-                      <p><strong>Items:</strong> {order.items?.length || 0} items</p>
-                    </div>
-                    <div className="order-items">
-                      {order.items?.map((item, index) => (
-                        <div key={index} className="order-item-detail">
-                          <span>{item.name} x{item.quantity}</span>
-                          <span>${(item.unit_amount * item.quantity).toFixed(2)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <OrdersModal
+        show={showOrders}
+        onClose={() => setShowOrders(false)}
+        orders={orders}
+      />
 
       {/* Profile Modal */}
-      {showProfile && (
-        <div className="modal-overlay" onClick={() => setShowProfile(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setShowProfile(false)}>×</button>
-            <h2>My Profile</h2>
-            <div className="profile-info">
-              <div className="profile-field">
-                <label>Email:</label>
-                <p>{currentUser?.email}</p>
-              </div>
-              <div className="profile-field">
-                <label>Name:</label>
-                <p>{currentUser?.first_name} {currentUser?.last_name}</p>
-              </div>
-              <div className="profile-field">
-                <label>Phone:</label>
-                <p>{currentUser?.phone || 'Not provided'}</p>
-              </div>
-              <div className="profile-field">
-                <label>Address:</label>
-                <p>{currentUser?.address || 'Not provided'}</p>
-              </div>
-              <div className="profile-field">
-                <label>City, State:</label>
-                <p>{currentUser?.city || 'Not provided'}, {currentUser?.state || 'Not provided'}</p>
-              </div>
-              <div className="profile-field">
-                <label>ZIP Code:</label>
-                <p>{currentUser?.zip_code || 'Not provided'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Checkout Modal */}
-      {showCheckout && (
-        <div className="modal-overlay" onClick={() => setShowCheckout(false)}>
-          <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setShowCheckout(false)}>×</button>
-            <h2>Checkout</h2>
-            <div className="checkout-content">
-              <div className="checkout-left">
-                <h3>Shipping Information</h3>
-                <div className="form-group">
-                  <input
-                    type="text"
-                    placeholder="Address"
-                    value={shippingInfo.address}
-                    onChange={(e) => setShippingInfo({...shippingInfo, address: e.target.value})}
-                  />
-                </div>
-                <div className="form-group">
-                  <input
-                    type="text"
-                    placeholder="City"
-                    value={shippingInfo.city}
-                    onChange={(e) => setShippingInfo({...shippingInfo, city: e.target.value})}
-                  />
-                </div>
-                <div className="form-group">
-                  <input
-                    type="text"
-                    placeholder="State"
-                    value={shippingInfo.state}
-                    onChange={(e) => setShippingInfo({...shippingInfo, state: e.target.value})}
-                  />
-                </div>
-                <div className="form-group">
-                  <input
-                    type="text"
-                    placeholder="ZIP Code"
-                    value={shippingInfo.zip_code}
-                    onChange={(e) => setShippingInfo({...shippingInfo, zip_code: e.target.value})}
-                  />
-                </div>
-                
-                <h3>Discount Code</h3>
-                <div className="form-group">
-                  <input
-                    type="text"
-                    placeholder="Enter discount code"
-                    value={discountCode}
-                    onChange={(e) => setDiscountCode(e.target.value)}
-                  />
-                  <button onClick={validateDiscountCode}>Apply</button>
-                </div>
-              </div>
-              
-              <div className="checkout-right">
-                <h3>Order Summary</h3>
-                {cart.map(item => (
-                  <div key={item.id} className="checkout-item">
-                    <span>{item.name} x{item.quantity}</span>
-                    <span>${(item.price * item.quantity).toFixed(2)}</span>
-                  </div>
-                ))}
-                
-                {orderTotal && (
-                  <div className="order-totals">
-                    <div className="total-line">
-                      <span>Subtotal:</span>
-                      <span>${orderTotal.subtotal}</span>
-                    </div>
-                    <div className="total-line">
-                      <span>Tax:</span>
-                      <span>${orderTotal.tax_amount}</span>
-                    </div>
-                    <div className="total-line">
-                      <span>Shipping:</span>
-                      <span>${orderTotal.shipping_cost}</span>
-                    </div>
-                    {orderTotal.discount_amount > 0 && (
-                      <div className="total-line discount">
-                        <span>Discount:</span>
-                        <span>-${orderTotal.discount_amount}</span>
-                      </div>
-                    )}
-                    <div className="total-line final-total">
-                      <span>Total:</span>
-                      <span>${orderTotal.total}</span>
-                    </div>
-                  </div>
-                )}
-                
-                <PayPalCheckout
-                  cart={cart}
-                  total={orderTotal?.total || 0}
-                  shippingInfo={shippingInfo}
-                  discountCode={discountCode}
-                  onPaymentSuccess={handlePaymentSuccess}
-                  onPaymentError={handlePaymentError}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProfileModal
+        show={showProfile}
+        onClose={() => setShowProfile(false)}
+        currentUser={currentUser}
+      />
 
       {/* Auth Modal */}
-      {showAuth && (
-        <div className="modal-overlay" onClick={() => setShowAuth(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setShowAuth(false)}>×</button>
-            <h2>{authMode === 'login' ? 'Login' : 'Register'}</h2>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.target);
-              const data = Object.fromEntries(formData);
-              handleAuth(data);
-            }}>
-              <div className="form-group">
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Password"
-                  required
-                />
-              </div>
-              {authMode === 'register' && (
-                <>
-                  <div className="form-group">
-                    <input
-                      type="text"
-                      name="first_name"
-                      placeholder="First Name"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <input
-                      type="text"
-                      name="last_name"
-                      placeholder="Last Name"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <input
-                      type="tel"
-                      name="phone"
-                      placeholder="Phone (optional)"
-                    />
-                  </div>
-                </>
-              )}
-              <button type="submit" className="auth-submit-btn">
-                {authMode === 'login' ? 'Login' : 'Register'}
-              </button>
-            </form>
-            <button 
-              className="auth-toggle-btn"
-              onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-            >
-              {authMode === 'login' ? 'Need an account? Register' : 'Already have an account? Login'}
-            </button>
-          </div>
-        </div>
-      )}
+      <AuthModal
+        show={showAuth}
+        onClose={() => setShowAuth(false)}
+        authMode={authMode}
+        setAuthMode={setAuthMode}
+        handleAuth={handleAuth}
+      />
+      {/* Toast Notification */}
+      <Toast message={toast.message} type={toast.type} show={toast.show} />
       {/* Footer */}
       <footer className="footer">
         <div>
-          &copy; {new Date().getFullYear()} Green Haven Nursery &mdash; Crafted with 🌱 by <a href="mailto:your@email.com">Jathin</a>
+          &copy; {new Date().getFullYear()} Green Haven Nursery &mdash; Crafted with 🌱 by <a href="mailto:p.jathin021@gmail.com">Jathin</a>
           &nbsp;|&nbsp;
           <a href="https://github.com/pjathin021" target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
